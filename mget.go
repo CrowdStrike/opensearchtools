@@ -36,7 +36,7 @@ func (m *MGetRequest[K]) Add(docs ...K) {
 	for i, doc := range docs {
 		converted[i] = mgetDoc{
 			ID:    doc.GetID(),
-			Index: doc.RouteToIndex(),
+			Index: doc.GetIndex(),
 		}
 	}
 
