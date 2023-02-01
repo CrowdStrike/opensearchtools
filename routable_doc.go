@@ -8,16 +8,16 @@ package opensearchtools
 //		Index 	string
 //	}
 //
-//	func (b *BasicDoc) GetID() string {
+//	func (b *BasicDoc) ID() string {
 //		return b.ID
 //	}
 //
-//	func (b *BasicDoc) GetIndex() string{
+//	func (b *BasicDoc) Index() string{
 //		return b.Index
 //	}
 type RoutableDoc interface {
-	// GetID returns the document ID
-	GetID() string
-	// GetIndex returns the index the document should be routed to
-	GetIndex() string
+	// ID returns the document ID
+	ID() string
+	// Index returns the index the document should be routed to
+	Index() string
 }
