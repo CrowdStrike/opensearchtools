@@ -11,37 +11,41 @@ import (
 )
 
 // MGetRequest wraps the functionality of [opensearchapi.MgetRequest] by supporting request body creation.
-// This is done with a generic K [RoutableDoc] letting you [Add] documents to be requested.
-// For example, if we use the BasicDoc example from [RoutableDoc] we can leverage an MGetRequest as simply as:
+// We can perform an MGetRequest as simply as:
 //
-//	doc := BasicDoc{ID: "sampleId", Index: "index"}
-//	mgetResults, mgetError := NewMGetRequest[BasicDoc]().Add(doc).Do(context.background(), client)
-type MGetRequest[K RoutableDoc] struct {
+//	mgetResults, mgetError := NewMGetRequest().
+//	    Add("example_index", "totally_real_id").
+//	    Do(context.background(), client)
+type MGetRequest struct {
     // Index destination for entire request
     // if used individual documents don't need to specify the index
     Index string `json:"-"`
 
+    // Docs are the list of documents to be fetched
     Docs []mgetDoc `json:"docs"`
 }
 
-// NewMGetRequest instantiates an empty MGetRequest for declared [RoutableDoc] K.
+// NewMGetRequest instantiates an empty MGetRequest.
 // An empty MGetRequest is executable but will return zero documents because zero have been requested.
-func NewMGetRequest[K RoutableDoc]() *MGetRequest[K] {
-    return &MGetRequest[K]{}
+func NewMGetRequest() *MGetRequest {
+    return &MGetRequest{}
 }
 
-// Add any number of docs to the MGetRequest
-func (m *MGetRequest[K]) Add(docs ...K) *MGetRequest[K] {
-    converted := make([]mgetDoc, len(docs))
-    for i, doc := range docs {
-        converted[i] = mgetDoc{
-            ID:    doc.ID(),
-            Index: doc.Index(),
-        }
-    }
+// Add a request for a document with id at a specific index.
+// If index is an empty string, the request relies on the top level index MGetRequest.Index
+func (m *MGetRequest) Add(index, id string) *MGetRequest {
+    m.Docs = append(m.Docs, mgetDoc{
+        ID:    id,
+        Index: index,
+    })
 
-    m.Docs = append(m.Docs, converted...)
+    return m
+}
 
+// SetIndex sets the top level index for the request. If a individual document request does not have an index specified,
+// this index will be used.
+func (m *MGetRequest) SetIndex(index string) *MGetRequest {
+    m.Index = index
     return m
 }
 
@@ -51,8 +55,7 @@ func (m *MGetRequest[K]) Add(docs ...K) *MGetRequest[K] {
 //
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
-//   - An individual document response cannot be unmarshalled into K
-func (m *MGetRequest[K]) Do(ctx context.Context, client *opensearch.Client) (*MGetResponse[K], error) {
+func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*MGetResponse, error) {
     bodyBytes, jErr := json.Marshal(m)
     if jErr != nil {
         return nil, jErr
@@ -67,32 +70,18 @@ func (m *MGetRequest[K]) Do(ctx context.Context, client *opensearch.Client) (*MG
         return nil, rErr
     }
 
+    resp := &MGetResponse{
+        StatusCode: osResp.StatusCode,
+        Header:     osResp.Header,
+    }
+
     var respBuf bytes.Buffer
     if _, err := respBuf.ReadFrom(osResp.Body); err != nil {
         return nil, err
     }
 
-    t := &mgetResponseBody{}
-
-    if err := json.Unmarshal(respBuf.Bytes(), &t); err != nil {
+    if err := json.Unmarshal(respBuf.Bytes(), &resp); err != nil {
         return nil, err
-    }
-
-    var docs []MGetResult[K]
-    for _, rawDoc := range t.Docs {
-        doc := MGetResult[K]{}
-
-        if err := json.Unmarshal(rawDoc, &doc); err != nil {
-            doc.Error = err
-        }
-
-        docs = append(docs, doc)
-    }
-
-    resp := &MGetResponse[K]{
-        StatusCode: osResp.StatusCode,
-        Header:     osResp.Header,
-        Docs:       docs,
     }
 
     return resp, nil
@@ -104,27 +93,28 @@ type mgetDoc struct {
     Index string `json:"_index,omitempty"`
 }
 
-// MGetResponse wraps the functionality of [opensearchapi.Response] by supporting request unmarshalling of the found
-// documents into K
-type MGetResponse[K RoutableDoc] struct {
-    StatusCode int
-    Header     http.Header
-    Docs       []MGetResult[K]
-}
-
-// mgetResponseBody is an intermediary struct for the api response, to individually un marshall the response documents.
-type mgetResponseBody struct {
-    Docs []json.RawMessage `json:"docs"`
+// MGetResponse wraps the functionality of [opensearchapi.Response] by unmarshalling the reponse body into a
+// slice of MGetResults
+type MGetResponse struct {
+    StatusCode int          `json:"-"`
+    Header     http.Header  `json:"-"`
+    Docs       []MGetResult `json:"docs,omitempty"`
 }
 
 // MGetResult is the individual result for each requested item
-type MGetResult[K RoutableDoc] struct {
-    Index       string `json:"_index,omitempty"`
-    ID          string `json:"_id,omitempty"`
-    Version     int    `json:"_version,omitempty"`
-    SeqNo       int    `json:"_seq_no,omitempty"`
-    PrimaryTerm int    `json:"_primary_term,omitempty"`
-    Found       bool   `json:"found,omitempty"`
-    Source      K      `json:"_source,omitempty"`
-    Error       error  `json:"-"`
+type MGetResult struct {
+    Index       string          `json:"_index,omitempty"`
+    ID          string          `json:"_id,omitempty"`
+    Version     int             `json:"_version,omitempty"`
+    SeqNo       int             `json:"_seq_no,omitempty"`
+    PrimaryTerm int             `json:"_primary_term,omitempty"`
+    Found       bool            `json:"found,omitempty"`
+    Source      json.RawMessage `json:"_source,omitempty"`
+    Error       error           `json:"-"`
+}
+
+// GetSource returns the raw bytes of the document of the MGetResult
+func (m MGetResult) GetSource() []byte {
+    rawSource, _ := m.Source.MarshalJSON()
+    return rawSource
 }
