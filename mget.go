@@ -31,7 +31,7 @@ func NewMGetRequest[K RoutableDoc]() *MGetRequest[K] {
 }
 
 // Add any number of docs to the MGetRequest
-func (m *MGetRequest[K]) Add(docs ...K) {
+func (m *MGetRequest[K]) Add(docs ...K) *MGetRequest[K] {
     converted := make([]mgetDoc, len(docs))
     for i, doc := range docs {
         converted[i] = mgetDoc{
@@ -41,6 +41,8 @@ func (m *MGetRequest[K]) Add(docs ...K) {
     }
 
     m.Docs = append(m.Docs, converted...)
+
+    return m
 }
 
 // Do executes the Multi-Get MGetRequest using the provided opensearch.Client.
