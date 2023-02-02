@@ -115,6 +115,5 @@ type MGetResult struct {
 
 // GetSource returns the raw bytes of the document of the MGetResult
 func (m MGetResult) GetSource() []byte {
-    rawSource, _ := m.Source.MarshalJSON()
-    return rawSource
+    return []byte(m.Source)
 }
