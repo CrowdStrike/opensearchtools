@@ -35,7 +35,7 @@ func NewSearchRequest() *SearchRequest {
 }
 
 // Source translates the SearchRequest into the shape expected by OpenSearch.
-func (r *SearchRequest) Source() (any, error) {
+func (r *SearchRequest) Source() (map[string]any, error) {
 	source := make(map[string]any)
 	if r.Query != nil {
 		src, err := r.Query.Source()
