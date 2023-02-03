@@ -60,7 +60,7 @@ func (q *BoolQuery) Filter(queries ...Query) *BoolQuery {
 
 // Source coverts the BoolQuery to the correct OpenSearch JSON
 func (q *BoolQuery) Source() (any, error) {
-	bq := make(map[string]interface{})
+	bq := make(map[string]any)
 
 	if q.minimumShouldMatch != nil {
 		bq[minimumShouldMatch] = q.minimumShouldMatch
@@ -102,19 +102,19 @@ func (q *BoolQuery) Source() (any, error) {
 		bq["filter"] = filter
 	}
 
-	source := make(map[string]interface{})
+	source := make(map[string]any)
 	source["bool"] = bq
 
 	return source, nil
 }
 
 // sourceQueries is a utility method to convert all sub queries to their OpenSearch source.
-func sourceQueries(queries []Query) (interface{}, error) {
+func sourceQueries(queries []Query) (any, error) {
 	if len(queries) == 0 {
 		return nil, nil
 	}
 
-	var sources []interface{}
+	var sources []any
 	for _, q := range queries {
 		qSource, sErr := q.Source()
 		if sErr != nil {
