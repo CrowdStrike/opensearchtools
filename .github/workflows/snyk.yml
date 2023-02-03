@@ -1,0 +1,27 @@
+name: Snyk dependencies check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  snyk-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: install Snyk
+        run: |
+          curl -Lo ./snyk https://static.snyk.io/cli/latest/snyk-linux
+          chmod a+x ./snyk
+
+      - name: snyk test
+        run: ./snyk test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
