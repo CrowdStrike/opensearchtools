@@ -17,6 +17,14 @@ type DocumentID struct {
     index string
 }
 
+// NewDocumentID constructs a DocumentID with the core two identifiers, ID and Index.
+func NewDocumentID(id, index string) DocumentID {
+    return DocumentID{
+        id:    id,
+        index: index,
+    }
+}
+
 // ID returns the document ID
 func (d DocumentID) ID() string {
     return d.id
