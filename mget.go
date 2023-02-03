@@ -52,7 +52,7 @@ func (m *MGetRequest) SetIndex(index string) *MGetRequest {
 }
 
 // Source translates the MGetRequest into the shape expected by OpenSearch.
-func (m *MGetRequest) Source() any {
+func (m *MGetRequest) Source() map[string]any {
 	docs := make([]any, len(m.Docs))
 	for i, d := range m.Docs {
 		docReq := make(map[string]any)
