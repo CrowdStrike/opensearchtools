@@ -13,6 +13,8 @@ import (
 )
 
 // SearchRequest wraps the functionality of [opensearchapi.SearchRequest] by supporting request body creation.
+// An empty SearchRequest defaults to a size of 0. While this will find matches and return a total hits value,
+// it will return no documents. It is recommended to use NewSearchRequest or use SetSize.
 // A simple term query search as an example:
 //
 //	req := NewSearchRequest()
@@ -26,8 +28,10 @@ type SearchRequest struct {
 	Sort  []*search.Sort
 }
 
-// NewSearchRequest instantiates an empty SearchRequest.
-// An empty SearchRequest will search across all indices and return the top 10 documents with the default [sorting].
+// NewSearchRequest instantiates a SearchRequest with a Size of -1.
+// Any negative value for SearchRequest.Size will be ignored and not included in the source.
+// Opensearch by default, if no size is included in a search request, will limit the results to 10 documents.
+// A NewSearchRequest will search across all indices and return the top 10 documents with the default [sorting].
 //
 // [sorting]: https://opensearch.org/docs/latest/opensearch/search/sort/
 func NewSearchRequest() *SearchRequest {
@@ -69,6 +73,7 @@ func (r *SearchRequest) AddIndices(indices ...string) *SearchRequest {
 }
 
 // SetSize sets the request size, limiting the number of documents returned.
+// A negative value for size will be ignored and not included in the SearchRequest.Source.
 func (r *SearchRequest) SetSize(n int) *SearchRequest {
 	r.Size = n
 	return r
