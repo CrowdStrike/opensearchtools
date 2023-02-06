@@ -13,8 +13,8 @@ type RoutableDoc interface {
 
 // DocumentRef references a document via its index and id. It is the most basic implementation of RoutableDoc
 type DocumentRef struct {
-	id    string
 	index string
+	id    string
 }
 
 // NewDocumentRef constructs a DocumentRef with the core two identifiers, ID and Index.
