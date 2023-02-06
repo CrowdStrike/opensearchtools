@@ -51,25 +51,26 @@ func (m *MGetRequest) SetIndex(index string) *MGetRequest {
 	return m
 }
 
-// Source translates the MGetRequest into the shape expected by OpenSearch.
-func (m *MGetRequest) Source() map[string]any {
+// MarshalJSON marshals the MGetRequest into the proper json expected by OpenSearch.
+func (m *MGetRequest) MarshalJSON() ([]byte, error) {
 	docs := make([]any, len(m.Docs))
 	for i, d := range m.Docs {
-		docReq := make(map[string]any)
+		docReq := map[string]any{
+			"_id": d.ID(),
+		}
 
 		if d.Index() != "" {
 			docReq["_index"] = d.Index()
 		}
 
-		docReq["_id"] = d.ID()
-
-		docs[i] = d
+		docs[i] = docReq
 	}
 
-	source := make(map[string]any)
-	source["docs"] = docs
+	source := map[string]any{
+		"docs": docs,
+	}
 
-	return source
+	return json.Marshal(source)
 }
 
 // Do executes the Multi-Get MGetRequest using the provided opensearch.Client.
@@ -79,7 +80,7 @@ func (m *MGetRequest) Source() map[string]any {
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
 func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*MGetResponse, error) {
-	bodyBytes, jErr := json.Marshal(m.Source())
+	bodyBytes, jErr := json.Marshal(m)
 	if jErr != nil {
 		return nil, jErr
 	}

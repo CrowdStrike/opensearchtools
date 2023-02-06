@@ -18,7 +18,7 @@ type DocumentRef struct {
 }
 
 // NewDocumentRef constructs a DocumentRef with the core two identifiers, ID and Index.
-func NewDocumentRef(id, index string) DocumentRef {
+func NewDocumentRef(index, id string) DocumentRef {
 	return DocumentRef{
 		id:    id,
 		index: index,
@@ -41,14 +41,8 @@ type DocumentResult interface {
 	GetSource() []byte
 }
 
-// PtrTo is a generic constraint that restricts value to be pointers.
-// T can be any type.
-type PtrTo[T any] interface {
-	*T
-}
-
 // ReadDocument reads the source from a DocumentResult and parses it into the passed document object.
-// Document and be any pointer type.
+// Document can be any pointer type.
 func ReadDocument[D any, P PtrTo[D], R DocumentResult](docResult R, document P) error {
 	return json.Unmarshal(docResult.GetSource(), document)
 }
