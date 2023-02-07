@@ -14,16 +14,16 @@ const (
 	testID2 = "test_id2"
 )
 
-type testDoc struct {
-	id, index string
+type mgetTestDoc struct {
+	index, id string
 }
 
-func (d testDoc) ID() string {
-	return d.id
-}
-
-func (d testDoc) Index() string {
+func (d mgetTestDoc) Index() string {
 	return d.index
+}
+
+func (d mgetTestDoc) ID() string {
+	return d.id
 }
 
 func TestMGetRequest_Add(t *testing.T) {
@@ -141,7 +141,7 @@ func TestMGetRequest_AddDocs(t *testing.T) {
 			name: "Multiple docs of mixed types",
 			docs: []RoutableDoc{
 				NewDocumentRef(testIndex1, testID1),
-				testDoc{id: testID2, index: testIndex2},
+				mgetTestDoc{id: testID2, index: testIndex2},
 			},
 			want: []mockDoc{
 				{id: testID1, index: testIndex1},
@@ -216,7 +216,7 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 			name: "Single document single type",
 			fields: fields{
 				Docs: []RoutableDoc{
-					testDoc{id: testID1, index: testIndex1},
+					mgetTestDoc{id: testID1, index: testIndex1},
 				},
 			},
 			want:    []byte(`{"docs":[{"_id":"test_id","_index":"test_index"}]}`),
@@ -226,8 +226,8 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 			name: "Multiple documents single type",
 			fields: fields{
 				Docs: []RoutableDoc{
-					testDoc{id: testID1, index: testIndex1},
-					testDoc{id: testID2, index: testIndex2},
+					mgetTestDoc{id: testID1, index: testIndex1},
+					mgetTestDoc{id: testID2, index: testIndex2},
 				},
 			},
 			want:    []byte(`{"docs":[{"_id":"test_id","_index":"test_index"},{"_id":"test_id2","_index":"test_index2"}]}`),
@@ -237,7 +237,7 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 			name: "Multiple documents mixed type",
 			fields: fields{
 				Docs: []RoutableDoc{
-					testDoc{id: testID1, index: testIndex1},
+					mgetTestDoc{id: testID1, index: testIndex1},
 					NewDocumentRef(testIndex2, testID2),
 				},
 			},
@@ -248,7 +248,7 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 			name: "Document without index",
 			fields: fields{
 				Docs: []RoutableDoc{
-					testDoc{id: testID1},
+					mgetTestDoc{id: testID1},
 				},
 			},
 			want:    []byte(`{"docs":[{"_id":"test_id"}]}`),
@@ -258,7 +258,7 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 			name: "Document without id",
 			fields: fields{
 				Docs: []RoutableDoc{
-					testDoc{index: testIndex1},
+					mgetTestDoc{index: testIndex1},
 				},
 			},
 			want:    []byte(`{"docs":[{"_id":"","_index":"test_index"}]}`),
@@ -268,7 +268,7 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 			name: "Document without id and index",
 			fields: fields{
 				Docs: []RoutableDoc{
-					testDoc{},
+					mgetTestDoc{},
 				},
 			},
 			want:    []byte(`{"docs":[{"_id":""}]}`),
@@ -279,7 +279,7 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 			fields: fields{
 				Index: testIndex2,
 				Docs: []RoutableDoc{
-					testDoc{id: testID1, index: testIndex1},
+					mgetTestDoc{id: testID1, index: testIndex1},
 				},
 			},
 			want:    []byte(`{"docs":[{"_id":"test_id","_index":"test_index"}]}`),
@@ -298,7 +298,7 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 				return
 			}
 
-			require.Equalf(t, tt.want, got, "expected %s - got %s", tt.want, got)
+			require.JSONEq(t, string(tt.want), string(got))
 		})
 	}
 }

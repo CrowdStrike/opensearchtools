@@ -5,10 +5,10 @@ import "encoding/json"
 // RoutableDoc interface defines an OpenSearch document that can be routed to a specific index.
 // The most basic implementation is DocumentRef.
 type RoutableDoc interface {
-	// ID returns the document ID
-	ID() string
 	// Index returns the index the document should be routed to
 	Index() string
+	// ID returns the document ID
+	ID() string
 }
 
 // DocumentRef references a document via its index and id. It is the most basic implementation of RoutableDoc
@@ -25,14 +25,14 @@ func NewDocumentRef(index, id string) DocumentRef {
 	}
 }
 
-// ID returns the document ID
-func (d DocumentRef) ID() string {
-	return d.id
-}
-
 // Index returns the index the document should be routed to
 func (d DocumentRef) Index() string {
 	return d.index
+}
+
+// ID returns the document ID
+func (d DocumentRef) ID() string {
+	return d.id
 }
 
 // DocumentResult defines any OpenSearch response that contains a document source.
