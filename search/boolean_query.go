@@ -1,10 +1,13 @@
 package search
 
+import "encoding/json"
+
 const (
-	minimumShouldMatch = "minimumShouldMatch"
+	minimumShouldMatch = "minimum_should_match"
 )
 
 // BoolQuery combines other queries to form more complex statements.
+// An empty BoolQuery is executable by OpenSearch. Without any constraints it will match on everything.
 //
 // For more details see https://opensearch.org/docs/latest/opensearch/query-dsl/bool/
 type BoolQuery struct {
@@ -15,8 +18,7 @@ type BoolQuery struct {
 	filter             []Query
 }
 
-// NewBoolQuery instantiates a boolean query.
-// An empty BoolQuery will perform as if no query was provided, and all documents will match.
+// NewBoolQuery instantiates an empty boolean query.
 func NewBoolQuery() *BoolQuery {
 	return &BoolQuery{}
 }
@@ -58,15 +60,15 @@ func (q *BoolQuery) Filter(queries ...Query) *BoolQuery {
 	return q
 }
 
-// Source coverts the BoolQuery to the correct OpenSearch JSON
-func (q *BoolQuery) Source() (any, error) {
+// ToOpenSearchJSON coverts the BoolQuery to the correct OpenSearch JSON
+func (q *BoolQuery) ToOpenSearchJSON() ([]byte, error) {
 	bq := make(map[string]any)
 
 	if q.minimumShouldMatch != nil {
 		bq[minimumShouldMatch] = q.minimumShouldMatch
 	}
 
-	must, mErr := sourceQueries(q.must)
+	must, mErr := convertSubQueries(q.must)
 	if mErr != nil {
 		return nil, mErr
 	}
@@ -75,7 +77,7 @@ func (q *BoolQuery) Source() (any, error) {
 		bq["must"] = must
 	}
 
-	mustNot, mnErr := sourceQueries(q.mustNot)
+	mustNot, mnErr := convertSubQueries(q.mustNot)
 	if mnErr != nil {
 		return nil, mnErr
 	}
@@ -84,7 +86,7 @@ func (q *BoolQuery) Source() (any, error) {
 		bq["must_not"] = mustNot
 	}
 
-	should, sErr := sourceQueries(q.should)
+	should, sErr := convertSubQueries(q.should)
 	if sErr != nil {
 		return nil, sErr
 	}
@@ -93,7 +95,7 @@ func (q *BoolQuery) Source() (any, error) {
 		bq["should"] = should
 	}
 
-	filter, fErr := sourceQueries(q.filter)
+	filter, fErr := convertSubQueries(q.filter)
 	if fErr != nil {
 		return nil, fErr
 	}
@@ -102,27 +104,28 @@ func (q *BoolQuery) Source() (any, error) {
 		bq["filter"] = filter
 	}
 
-	source := make(map[string]any)
-	source["bool"] = bq
+	source := map[string]any{
+		"bool": bq,
+	}
 
-	return source, nil
+	return json.Marshal(source)
 }
 
-// sourceQueries is a utility method to convert all sub queries to their OpenSearch source.
-func sourceQueries(queries []Query) (any, error) {
+// convertSubQueries is a utility method to convert all sub queries to their OpenSearch source.
+func convertSubQueries(queries []Query) (json.RawMessage, error) {
 	if len(queries) == 0 {
 		return nil, nil
 	}
 
-	var sources []any
+	var jsonQueries []json.RawMessage
 	for _, q := range queries {
-		qSource, sErr := q.Source()
-		if sErr != nil {
-			return nil, sErr
+		qJSON, jErr := q.ToOpenSearchJSON()
+		if jErr != nil {
+			return nil, jErr
 		}
 
-		sources = append(sources, qSource)
+		jsonQueries = append(jsonQueries, qJSON)
 	}
 
-	return sources, nil
+	return json.Marshal(jsonQueries)
 }

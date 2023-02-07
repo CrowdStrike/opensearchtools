@@ -1,6 +1,12 @@
 package search
 
+import "encoding/json"
+
 // MatchPhraseQuery finds document that match documents that contain an exact phrase in a specified order.
+// An empty MatchPhraseQuery will be rejected by OpenSearch for two reasons:
+//
+//   - a field must not be empty or null
+//   - a value must be non-null
 //
 // For more details see https://opensearch.org/docs/latest/opensearch/query-dsl/full-text/#match-phrase
 type MatchPhraseQuery struct {
@@ -16,13 +22,13 @@ func NewMatchPhraseQuery(field, phrase string) *MatchPhraseQuery {
 	}
 }
 
-// Source converts the MatchPhraseQuery to the correct OpenSearch JSON.
-func (q *MatchPhraseQuery) Source() (any, error) {
-	mq := make(map[string]any)
-	mq[q.field] = q.phrase
+// ToOpenSearchJSON converts the MatchPhraseQuery to the correct OpenSearch JSON.
+func (q *MatchPhraseQuery) ToOpenSearchJSON() ([]byte, error) {
+	source := map[string]any{
+		"match_phrase": map[string]any{
+			q.field: q.phrase,
+		},
+	}
 
-	source := make(map[string]any)
-	source["match_phrase"] = mq
-
-	return source, nil
+	return json.Marshal(source)
 }

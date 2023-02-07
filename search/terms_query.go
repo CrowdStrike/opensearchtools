@@ -1,6 +1,12 @@
 package search
 
+import "encoding/json"
+
 // TermsQuery finds documents that have the field match one of the listed values.
+// An empty TermsQuery will be rejected by OpenSearch for two reasons:
+//
+//   - a field must not be empty or null
+//   - a value must be non-null
 //
 // For more details see https://opensearch.org/docs/latest/opensearch/query-dsl/term/#terms
 type TermsQuery struct {
@@ -16,13 +22,13 @@ func NewTermsQuery(field string, values ...any) *TermsQuery {
 	}
 }
 
-// Source converts the TermsQuery to the correct OpenSearch JSON.
-func (q *TermsQuery) Source() (any, error) {
-	tq := make(map[string]any)
-	tq[q.field] = q.values
+// ToOpenSearchJSON converts the TermsQuery to the correct OpenSearch JSON.
+func (q *TermsQuery) ToOpenSearchJSON() ([]byte, error) {
+	source := map[string]any{
+		"terms": map[string]any{
+			q.field: q.values,
+		},
+	}
 
-	source := make(map[string]any)
-	source["terms"] = tq
-
-	return source, nil
+	return json.Marshal(source)
 }

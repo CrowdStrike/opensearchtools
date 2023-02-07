@@ -1,6 +1,9 @@
 package search
 
-// Sort encapsulates the sort capabilities for OpenSearch
+import "encoding/json"
+
+// Sort encapsulates the sort capabilities for OpenSearch.
+// An empty Sort will be rejected by OpenSearch as a field must be non-null and non-empty.
 //
 // For more details see https://opensearch.org/docs/latest/opensearch/search/sort/
 type Sort struct {
@@ -16,8 +19,8 @@ func NewSort(field string, desc bool) *Sort {
 	}
 }
 
-// Source converts the Sort to the correct OpenSearch JSON.
-func (s *Sort) Source() any {
+// ToOpenSearchJSON converts the Sort to the correct OpenSearch JSON.
+func (s *Sort) ToOpenSearchJSON() ([]byte, error) {
 	sort := make(map[string]any)
 	if s.Desc {
 		sort["order"] = "desc"
@@ -25,8 +28,9 @@ func (s *Sort) Source() any {
 		sort["order"] = "asc"
 	}
 
-	source := make(map[string]any)
-	source[s.Field] = sort
+	source := map[string]any{
+		s.Field: sort,
+	}
 
-	return source
+	return json.Marshal(source)
 }

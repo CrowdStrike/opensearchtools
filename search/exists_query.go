@@ -1,5 +1,7 @@
 package search
 
+import "encoding/json"
+
 // ExistsQuery searches for documents that contain a specific field.
 //
 // For more details see https://opensearch.org/docs/latest/opensearch/query-dsl/term/#exists
@@ -8,17 +10,18 @@ type ExistsQuery struct {
 }
 
 // NewExistsQuery instantiates an exists query.
+// An empty field value will be rejected by OpenSearch
 func NewExistsQuery(field string) *ExistsQuery {
 	return &ExistsQuery{field: field}
 }
 
-// Source converts the ExistsQuery to the correct OpenSearch JSON.
-func (q *ExistsQuery) Source() (any, error) {
-	eq := make(map[string]any)
-	eq["field"] = q.field
+// ToOpenSearchJSON converts the ExistsQuery to the correct OpenSearch JSON.
+func (q *ExistsQuery) ToOpenSearchJSON() ([]byte, error) {
+	source := map[string]any{
+		"exists": map[string]any{
+			"field": q.field,
+		},
+	}
 
-	source := make(map[string]any)
-	source["exists"] = eq
-
-	return source, nil
+	return json.Marshal(source)
 }
