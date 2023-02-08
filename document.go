@@ -1,7 +1,5 @@
 package opensearchtools
 
-import "encoding/json"
-
 // RoutableDoc interface defines an OpenSearch document that can be routed to a specific index.
 // The most basic implementation is [DocumentRef].
 type RoutableDoc interface {
@@ -39,10 +37,4 @@ func (d DocumentRef) ID() string {
 type DocumentResult interface {
 	// GetSource returns the raw bytes of the document
 	GetSource() []byte
-}
-
-// ReadDocument reads the source from a DocumentResult and parses it into the passed document object.
-// Document can be any pointer type.
-func ReadDocument[D any, P PtrTo[D], R DocumentResult](docResult R, document P) error {
-	return json.Unmarshal(docResult.GetSource(), document)
 }
