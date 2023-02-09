@@ -15,13 +15,13 @@ import (
 // In order to do this, it also defines a bunch of marshalable types for making requests and getting
 // responses from OpenSearch 2. These might have a different shape than the similarily named ones in the root mget.
 
-// DoGet executes the Multi-Get MGetRequest using the provided opensearchtools.MGetRequest.
+// MGet executes the Multi-Get MGetRequest using the provided opensearchtools.MGetRequest.
 // If the request is executed successfully, then a MGetResponse with MGetResults will be returned.
 // An error can be returned if
 //
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
-func (e *OSv2Executor) DoMget(ctx context.Context, req *opensearchtools.MGetRequest) (*opensearchtools.MGetResponse, error) {
+func (e *OSv2Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (*opensearchtools.MGetResponse, error) {
 	// first create a serform mgetRequest
 	specReq := FromModelMGetRequest(req)
 
