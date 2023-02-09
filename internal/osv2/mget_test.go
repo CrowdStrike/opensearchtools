@@ -1,6 +1,9 @@
 package osv2
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -136,6 +139,177 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 			}
 
 			require.JSONEq(t, string(tt.want), string(got))
+		})
+	}
+}
+
+// func Test_FromModelMGetRequest(t *testing.T) {
+// }
+
+func Test_mgetResult_ToModel(t *testing.T) {
+	type fields struct {
+		Index       string
+		ID          string
+		Version     int
+		SeqNo       int
+		PrimaryTerm int
+		Found       bool
+		Source      json.RawMessage
+		Error       error
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   opensearchtools.MGetResult
+	}{
+		{
+			name: "Non-error result",
+			fields: fields{
+				Index:       testIndex1,
+				ID:          testID1,
+				Version:     42,
+				SeqNo:       99,
+				PrimaryTerm: 10,
+				Found:       true,
+				Source:      []byte(`{"name": "bob", "age": 42}`),
+				Error:       nil,
+			},
+			want: opensearchtools.MGetResult{
+				Index:       testIndex1,
+				ID:          testID1,
+				Version:     42,
+				SeqNo:       99,
+				PrimaryTerm: 10,
+				Found:       true,
+				Source:      []byte(`{"name": "bob", "age": 42}`),
+				Error:       nil,
+			},
+		},
+		{
+			name: "Error result",
+			fields: fields{
+				Error: fmt.Errorf("some OpenSearch error"),
+			},
+			want: opensearchtools.MGetResult{
+				Error: fmt.Errorf("some OpenSearch error"),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			marshalableResult := &mgetResult{
+				Index:       tt.fields.Index,
+				ID:          tt.fields.ID,
+				Version:     tt.fields.Version,
+				SeqNo:       tt.fields.SeqNo,
+				PrimaryTerm: tt.fields.PrimaryTerm,
+				Found:       tt.fields.Found,
+				Source:      tt.fields.Source,
+				Error:       tt.fields.Error,
+			}
+			got := marshalableResult.ToModel()
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_mgetResponse_ToModel(t *testing.T) {
+	testHeaders := http.Header{}
+	testHeaders.Add("x-foo", "bar")
+
+	type fields struct {
+		MarshlableResponse mgetResponse
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   *opensearchtools.MGetResponse
+	}{
+		{
+			name: "Multiple docs returned",
+			fields: fields{
+				MarshlableResponse: mgetResponse{
+					StatusCode: 200,
+					Header:     testHeaders,
+					Docs: []mgetResult{
+						{
+							Index:       testIndex1,
+							ID:          testID1,
+							Version:     42,
+							SeqNo:       99,
+							PrimaryTerm: 10,
+							Found:       true,
+							Source:      []byte(`{"name": "bob", "age": 42}`),
+							Error:       nil,
+						},
+						{
+							Index:       testIndex2,
+							ID:          testID2,
+							Version:     1,
+							SeqNo:       2,
+							PrimaryTerm: 2,
+							Found:       true,
+							Source:      []byte(`{"deviceName": "abc123", "os": "windows"}`),
+							Error:       nil,
+						},
+						{
+							Index:       testIndex2,
+							ID:          testID2,
+							Version:     10,
+							SeqNo:       220,
+							PrimaryTerm: 30,
+							Found:       false,
+							Source:      []byte{},
+							Error:       nil,
+						},
+					},
+				},
+			},
+			want: &opensearchtools.MGetResponse{
+				StatusCode: 200,
+				Header:     testHeaders,
+				Docs: []opensearchtools.MGetResult{
+					{
+						Index:       testIndex1,
+						ID:          testID1,
+						Version:     42,
+						SeqNo:       99,
+						PrimaryTerm: 10,
+						Found:       true,
+						Source:      []byte(`{"name": "bob", "age": 42}`),
+						Error:       nil,
+					},
+					{
+						Index:       testIndex2,
+						ID:          testID2,
+						Version:     1,
+						SeqNo:       2,
+						PrimaryTerm: 2,
+						Found:       true,
+						Source:      []byte(`{"deviceName": "abc123", "os": "windows"}`),
+						Error:       nil,
+					},
+					{
+						Index:       testIndex2,
+						ID:          testID2,
+						Version:     10,
+						SeqNo:       220,
+						PrimaryTerm: 30,
+						Found:       false,
+						Source:      []byte{},
+						Error:       nil,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			marshalableResponse := tt.fields.MarshlableResponse
+			got := marshalableResponse.ToModel()
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
