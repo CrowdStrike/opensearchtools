@@ -20,20 +20,19 @@ type MGetRequest struct {
 	Docs []RoutableDoc
 }
 
-// NewMGetRequest instantiates an empty MGetRequest.
-// An empty MGetRequest is executable but will return zero documents because zero have been requested.
+// NewMGetRequest instantiates an empty [MGetRequest].
 func NewMGetRequest() *MGetRequest {
 	return &MGetRequest{}
 }
 
-// Add a DocumentRef to the documents being requested.
-// If index is an empty string, the request relies on the top level MGetRequest.Index.
+// Add a [DocumentRef] to the documents being requested.
+// If index is an empty string, the request relies on the top-level MGetRequest.Index.
 func (m *MGetRequest) Add(index, id string) *MGetRequest {
 	return m.AddDocs(NewDocumentRef(index, id))
 }
 
-// AddDocs - add any number RoutableDoc to the documents being requested.
-// If the doc does not return anything for [RoutableDoc.Index], the request relies on the top level MGetRequest.Index.
+// AddDocs - add any number [RoutableDoc] to the documents being requested.
+// If the doc does not return anything for [RoutableDoc.Index], the request relies on the top level [MGetRequest.Index].
 func (m *MGetRequest) AddDocs(docs ...RoutableDoc) *MGetRequest {
 	m.Docs = append(m.Docs, docs...)
 	return m
@@ -47,7 +46,7 @@ func (m *MGetRequest) SetIndex(index string) *MGetRequest {
 }
 
 // MGetResponse wraps the functionality of [opensearchapi.Response] by unmarshalling the response body into a
-// slice of MGetResults.
+// slice of [MGetResults].
 type MGetResponse struct {
 	Header     http.Header
 	StatusCode int
@@ -66,7 +65,7 @@ type MGetResult struct {
 	Error       error
 }
 
-// GetSource returns the raw bytes of the document of the MGetResult.
+// GetSource returns the raw bytes of the document of the [MGetResult].
 func (m MGetResult) GetSource() []byte {
 	return []byte(m.Source)
 }

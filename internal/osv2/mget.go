@@ -15,10 +15,10 @@ import (
 // In order to do this, it also defines a bunch of marshalable types for making requests and getting
 // responses from OpenSearch 2. These might have a different shape than the similarily named ones in the root mget.
 
-// MGet executes the Multi-Get MGetRequest using the provided opensearchtools.MGetRequest.
-// If the request is executed successfully, then a MGetResponse with MGetResults will be returned.
-// An error can be returned if
-//
+// MGet executes the Multi-Get MGetRequest using the provided [opensearchtools.MGetRequest].
+// If the request is executed successfully, then an [opensearchtools.MGetResponse] with [opensearchtools.MGetResults]
+// will be returned.
+// An error can be returned if:
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
 func (e *OSv2Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (*opensearchtools.MGetResponse, error) {
@@ -59,7 +59,7 @@ func (e *OSv2Executor) MGet(ctx context.Context, req *opensearchtools.MGetReques
 	return modelResp, nil
 }
 
-// MGetRequest is a marshalable form of opensearchtools.MGet specific to the opensearchapi.MgetRequest in OpenSearch v2.
+// mgetRequest is a marshalable form of [opensearchtools.MGetRequest] specific to the opensearchapi.MgetRequest in OpenSearch v2.
 type mgetRequest struct {
 	// Index destination for entire request
 	// if used individual documents don't need to specify the index
@@ -69,7 +69,7 @@ type mgetRequest struct {
 	Docs []opensearchtools.RoutableDoc
 }
 
-// FromModelMGetRequest creates a new MGetRequest from the given opensearchtools.MGetRequest.
+// FromModelMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest].
 func FromModelMGetRequest(req *opensearchtools.MGetRequest) *mgetRequest {
 	return &mgetRequest{
 		Index: req.Index,
@@ -77,7 +77,7 @@ func FromModelMGetRequest(req *opensearchtools.MGetRequest) *mgetRequest {
 	}
 }
 
-// MarshalJSON marshals the mgetRequest into the proper json expected by OpenSearch 2.
+// MarshalJSON marshals the [mgetRequest] into the proper json expected by OpenSearch 2.
 func (m *mgetRequest) MarshalJSON() ([]byte, error) {
 	docs := make([]any, len(m.Docs))
 	for i, d := range m.Docs {
@@ -99,10 +99,7 @@ func (m *mgetRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(source)
 }
 
-// MGetResponse wraps the functionality of [opensearchapi.Response] by unmarshalling the response body into a
-// slice of MGetResults.
-
-// mgetResponse is an OpenSearch 2 specific struct corresponding to [opensearchapi.Response] and [opensearchtools.MGetResponse].
+// mgetResponse is an OpenSearch 2 specific struct corresponding to opensearchapi.Response and [opensearchtools.MGetResponse].
 // It holds a slice of mgetResults.
 type mgetResponse struct {
 	StatusCode int          `json:"-"`
@@ -110,7 +107,7 @@ type mgetResponse struct {
 	Docs       []mgetResult `json:"docs,omitempty"`
 }
 
-// ToModel converts this instance of an mgetResponse into an opensearchtools.MGetResponse.
+// ToModel converts this instance of an [mgetResponse] into an [opensearchtools.MGetResponse].
 func (r *mgetResponse) ToModel() *opensearchtools.MGetResponse {
 	modelDocs := make([]opensearchtools.MGetResult, len(r.Docs))
 	for i, d := range r.Docs {
@@ -137,7 +134,7 @@ type mgetResult struct {
 	Error       error           `json:"-"`
 }
 
-// / ToModel converts this instance of an mgetResult into an opensearchtools.MGetResult.
+// / ToModel converts this instance of an [mgetResult] into an [opensearchtools.MGetResult].
 func (r *mgetResult) ToModel() opensearchtools.MGetResult {
 	return opensearchtools.MGetResult{
 		Index:       r.Index,

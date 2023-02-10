@@ -10,7 +10,7 @@ type OSv2Executor struct {
 	client *opensearch.Client
 }
 
-// NewOSv2Executor creates a new OSv2Executor instance.
+// NewOSv2Executor creates a new [OSv2Executor] instance.
 func NewOSv2Executor(client *opensearch.Client) *OSv2Executor {
 	return &OSv2Executor{
 		client,
