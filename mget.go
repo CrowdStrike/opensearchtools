@@ -28,6 +28,7 @@ type MGetRequest struct {
 }
 
 // NewMGetRequest instantiates an empty [MGetRequest].
+// An empty [MGetRequest] is executable but will return zero documents because zero have been requested.
 func NewMGetRequest() *MGetRequest {
 	return &MGetRequest{}
 }
