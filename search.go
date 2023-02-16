@@ -38,16 +38,17 @@ func NewSearchRequest() *SearchRequest {
 	return &SearchRequest{Size: -1}
 }
 
-// Source translates the SearchRequest into the shape expected by OpenSearch.
-func (r *SearchRequest) Source() (map[string]any, error) {
+// MarshalJSON marshals the SearchRequest into the JSON shape expected by OpenSearch.
+// Implemented to match the [json.Marshaler] interface.
+func (r *SearchRequest) MarshalJSON() ([]byte, error) {
 	source := make(map[string]any)
 	if r.Query != nil {
-		src, err := r.Query.Source()
-		if err != nil {
-			return nil, err
+		queryJSON, jErr := r.Query.ToOpenSearchJSON()
+		if jErr != nil {
+			return nil, jErr
 		}
 
-		source["query"] = src
+		source["query"] = json.RawMessage(queryJSON)
 	}
 
 	if r.Size >= 0 {
@@ -55,15 +56,20 @@ func (r *SearchRequest) Source() (map[string]any, error) {
 	}
 
 	if len(r.Sort) > 0 {
-		var sorts []any
-		for _, s := range r.Sort {
-			sorts = append(sorts, s.Source())
+		sorts := make([]json.RawMessage, len(r.Sort))
+		for i, s := range r.Sort {
+			sortJSON, jErr := s.ToOpenSearchJSON()
+			if jErr != nil {
+				return nil, jErr
+			}
+
+			sorts[i] = sortJSON
 		}
 
 		source["sort"] = sorts
 	}
 
-	return source, nil
+	return json.Marshal(source)
 }
 
 // AddIndices sets the index list for the request.
@@ -100,12 +106,7 @@ func (r *SearchRequest) SetQuery(q search.Query) *SearchRequest {
 //   - The OpenSearch request fails to executed
 //   - The OpenSearch response cannot be parsed
 func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*SearchResponse, error) {
-	source, sErr := r.Source()
-	if sErr != nil {
-		return nil, sErr
-	}
-
-	bodyBytes, jErr := json.Marshal(source)
+	bodyBytes, jErr := json.Marshal(r)
 	if jErr != nil {
 		return nil, jErr
 	}

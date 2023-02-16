@@ -1,6 +1,12 @@
 package search
 
+import "encoding/json"
+
 // PrefixQuery finds documents that contain the value as a prefix.
+// An empty PrefixQuery will be rejected by OpenSearch for two reasons:
+//
+//   - a field must not be empty or null
+//   - a value must be non-null
 //
 // For more details see https://opensearch.org/docs/latest/opensearch/query-dsl/term/#prefix
 type PrefixQuery struct {
@@ -9,17 +15,17 @@ type PrefixQuery struct {
 }
 
 // NewPrefixQuery initializes a PrefixQuery targeting field looking for the prefix of value.
-func NewPrefixQuery(name string, value any) *PrefixQuery {
-	return &PrefixQuery{field: name, value: value}
+func NewPrefixQuery(field string, value any) *PrefixQuery {
+	return &PrefixQuery{field: field, value: value}
 }
 
-// Source converts the PrefixQuery Source converts the MatchPhraseQuery to the correct OpenSearch JSON.
-func (q *PrefixQuery) Source() (any, error) {
-	source := make(map[string]any)
-	pq := make(map[string]any)
-	source["prefix"] = pq
+// ToOpenSearchJSON converts the PrefixQuery Source converts the MatchPhraseQuery to the correct OpenSearch JSON.
+func (q *PrefixQuery) ToOpenSearchJSON() ([]byte, error) {
+	source := map[string]any{
+		"prefix": map[string]any{
+			q.field: q.value,
+		},
+	}
 
-	pq[q.field] = q.value
-
-	return source, nil
+	return json.Marshal(source)
 }

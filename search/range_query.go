@@ -1,6 +1,9 @@
 package search
 
+import "encoding/json"
+
 // RangeQuery allows you to search on a targeted field matching a defined range.
+// An empty RangeQuery will be rejected by OpenSearch as it requires a non-null and non-empty field.
 //
 // For more details see https://opensearch.org/docs/latest/opensearch/query-dsl/term/#range-query
 type RangeQuery struct {
@@ -12,7 +15,8 @@ type RangeQuery struct {
 }
 
 // NewRangeQuery instantiates a Range Query targeting field.
-// An empty range query will match all documents that contain the field.
+// A RangeQuery with no range operations will function like an
+// ExistsQuery and match all documents that contain the field.
 func NewRangeQuery(field string) *RangeQuery {
 	return &RangeQuery{field: field}
 }
@@ -41,8 +45,8 @@ func (q *RangeQuery) Lte(value any) *RangeQuery {
 	return q
 }
 
-// Source converts the RangeQuery to the correct OpenSearch JSON.
-func (q *RangeQuery) Source() (any, error) {
+// ToOpenSearchJSON converts the RangeQuery to the correct OpenSearch JSON.
+func (q *RangeQuery) ToOpenSearchJSON() ([]byte, error) {
 	ranges := make(map[string]any)
 	if q.gt != nil {
 		ranges["gt"] = q.gt
@@ -60,11 +64,11 @@ func (q *RangeQuery) Source() (any, error) {
 		ranges["lte"] = q.lte
 	}
 
-	rq := make(map[string]any)
-	rq[q.field] = ranges
+	source := map[string]any{
+		"range": map[string]any{
+			q.field: ranges,
+		},
+	}
 
-	source := make(map[string]any)
-	source["range"] = rq
-
-	return source, nil
+	return json.Marshal(source)
 }
