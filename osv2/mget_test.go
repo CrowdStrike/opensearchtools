@@ -143,10 +143,7 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 	}
 }
 
-// func Test_FromModelMGetRequest(t *testing.T) {
-// }
-
-func Test_mgetResult_ToModel(t *testing.T) {
+func Test_MGetResult_ToModel(t *testing.T) {
 	type fields struct {
 		Index       string
 		ID          string
@@ -198,7 +195,7 @@ func Test_mgetResult_ToModel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			marshalableResult := &mgetResult{
+			marshalableResult := &MGetResult{
 				Index:       tt.fields.Index,
 				ID:          tt.fields.ID,
 				Version:     tt.fields.Version,
@@ -214,12 +211,12 @@ func Test_mgetResult_ToModel(t *testing.T) {
 	}
 }
 
-func Test_mgetResponse_ToModel(t *testing.T) {
+func Test_MGetResponse_ToModel(t *testing.T) {
 	testHeaders := http.Header{}
 	testHeaders.Add("x-foo", "bar")
 
 	type fields struct {
-		MarshlableResponse mgetResponse
+		MarshlableResponse MGetResponse
 	}
 	tests := []struct {
 		name   string
@@ -229,10 +226,10 @@ func Test_mgetResponse_ToModel(t *testing.T) {
 		{
 			name: "Multiple docs returned",
 			fields: fields{
-				MarshlableResponse: mgetResponse{
+				MarshlableResponse: MGetResponse{
 					StatusCode: 200,
 					Header:     testHeaders,
-					Docs: []mgetResult{
+					Docs: []MGetResult{
 						{
 							Index:       testIndex1,
 							ID:          testID1,

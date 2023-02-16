@@ -1,9 +1,16 @@
 package opensearchtools
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 )
+
+// MGet defines a method which knows how to make an OpenSearch multiple document get.
+// It should be implemented by a version-specific executor.
+type MGet interface {
+	MGet(ctx context.Context, req *MGetRequest) (*MGetResponse, error)
+}
 
 // MGetRequest wraps the functionality of [opensearchapi.MgetRequest] by supporting request body creation.
 // We can perform an MGetRequest as simply as:
