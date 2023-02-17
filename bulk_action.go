@@ -5,14 +5,122 @@ import (
 	"fmt"
 )
 
-// Action wraps individual actions on a BulkRequest.
-type Action interface {
-	// GetAction returns a json byte array for the action and metadata of the operation.
-	GetAction() ([]byte, error)
+// BulkActionType is an enum for the various BulkActionTypes.
+type BulkActionType string
 
-	// GetDoc returns the optional byte array for the document in the operation.
-	// returns nil if no document is needed
-	GetDoc() ([]byte, error)
+const (
+	// BulkCreate creates a document if it doesn’t already exist and returns an error otherwise.
+	BulkCreate BulkActionType = "create"
+
+	// BulkIndex creates a document if it doesn’t yet exist and replaces the document if it already exists.
+	BulkIndex BulkActionType = "index"
+
+	// BulkDelete deletes a document if it exists. If the document doesn’t exist,
+	// OpenSearch doesn’t return an error, but instead returns not_found under ActionResponse.Result.
+	BulkDelete BulkActionType = "delete"
+
+	// BulkUpdate updates existing documents and returns an error if the document doesn’t exist.
+	BulkUpdate BulkActionType = "update"
+)
+
+// BulkAction is a union of the different type of actions that can be performed in a [BulkRequest].
+// While the struct has all the combined fields, only valid fields will be marshaled depending on the type of action.
+// For this reason, it's recommended to use the type constructors:
+//
+//   - NewIndexBulkAction
+//   - NewCreateBulkAction
+//   - NewDeleteBulkAction
+//   - NewUpdateBulkAction
+//
+// For more details, see https://opensearch.org/docs/latest/api-reference/document-apis/bulk/#request-body
+type BulkAction struct {
+	actionType BulkActionType
+	doc        RoutableDoc
+}
+
+// NewCreateBulkAction instantiates a BulkCreate action.
+func NewCreateBulkAction(doc RoutableDoc) BulkAction {
+	return BulkAction{
+		actionType: BulkCreate,
+		doc:        doc,
+	}
+}
+
+// NewIndexBulkAction instantiates a BulkIndex action.
+func NewIndexBulkAction(doc RoutableDoc) BulkAction {
+	return BulkAction{
+		actionType: BulkIndex,
+		doc:        doc,
+	}
+}
+
+// NewUpdateBulkAction instantiates a BulkUpdate action.
+func NewUpdateBulkAction(doc RoutableDoc) BulkAction {
+	return BulkAction{
+		actionType: BulkUpdate,
+		doc:        doc,
+	}
+}
+
+// NewDeleteBulkAction instantiates a BulkDelete action.
+func NewDeleteBulkAction(index, id string) BulkAction {
+	return BulkAction{
+		actionType: BulkDelete,
+		doc:        NewDocumentRef(index, id),
+	}
+}
+
+// MarshalJSONLines marshals the BulkAction into the appropriate JSON lines depending on the BulkActionType.
+func (b *BulkAction) MarshalJSONLines() ([][]byte, error) {
+	if b.doc == nil {
+		return nil, fmt.Errorf("missing routing information on BulkAction %s", b.actionType)
+	}
+
+	if b.doc.ID() == "" {
+		return nil, fmt.Errorf("missing id routing information on BulkAction %s", b.actionType)
+	}
+
+	var jsonLines [][]byte
+
+	actionRouting := map[string]any{"_id": b.doc.ID()}
+
+	// if Index is empty, use the request level index for routing
+	if b.doc.Index() != "" {
+		actionRouting["_index"] = b.doc.Index()
+	}
+
+	actionMeta := make(map[string]any)
+	switch b.actionType {
+	case BulkCreate, BulkIndex, BulkUpdate:
+		actionMeta[string(b.actionType)] = actionRouting
+		var (
+			line []byte
+			jErr error
+		)
+
+		if line, jErr = json.Marshal(actionMeta); jErr != nil {
+			return nil, jErr
+		}
+
+		jsonLines = append(jsonLines, line)
+
+		if line, jErr = json.Marshal(b.doc); jErr != nil {
+			return nil, jErr
+		}
+
+		jsonLines = append(jsonLines, line)
+	case BulkDelete:
+		actionMeta[string(b.actionType)] = actionRouting
+		if line, jErr := json.Marshal(actionMeta); jErr != nil {
+			return nil, jErr
+		} else {
+			jsonLines = append(jsonLines, line)
+		}
+	default:
+		return nil, fmt.Errorf("unssuported BulkActionType: %s", b.actionType)
+	}
+
+	return jsonLines, nil
 }
 
 // ActionResponse encapsulates the individual response for each operation

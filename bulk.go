@@ -16,7 +16,7 @@ import (
 //
 // For more details see https://opensearch.org/docs/latest/api-reference/document-apis/bulk/
 type BulkRequest struct {
-	Actions []Action
+	Actions []BulkAction
 	Refresh Refresh
 }
 
@@ -26,7 +26,7 @@ func NewBulkRequest() *BulkRequest {
 }
 
 // Add an action to the BulkRequest.
-func (r *BulkRequest) Add(actions ...Action) {
+func (r *BulkRequest) Add(actions ...BulkAction) {
 	r.Actions = append(r.Actions, actions...)
 }
 
@@ -38,21 +38,13 @@ func (r *BulkRequest) MarshalJSON() ([]byte, error) {
 
 	bodyBuf := new(bytes.Buffer)
 	for _, op := range r.Actions {
-		action, aErr := op.GetAction()
-		if aErr != nil {
-			return nil, aErr
+		jsonLines, jErr := op.MarshalJSONLines()
+		if jErr != nil {
+			return nil, jErr
 		}
 
-		bodyBuf.Write(action)
-		bodyBuf.WriteRune('\n')
-
-		doc, dErr := op.GetDoc()
-		if dErr != nil {
-			return nil, dErr
-		}
-
-		if len(doc) > 0 {
-			bodyBuf.Write(doc)
+		for _, line := range jsonLines {
+			bodyBuf.Write(line)
 			bodyBuf.WriteRune('\n')
 		}
 	}
@@ -61,7 +53,7 @@ func (r *BulkRequest) MarshalJSON() ([]byte, error) {
 }
 
 // Do executes the BulkRequest using the provided opensearch.Client.
-// If the request is executed successfully, then a BulkRequest will be returned.
+// If the request is executed successfully, then a BulkResponse will be returned.
 // An error can be returned if
 //
 //   - Any Action is missing an action
