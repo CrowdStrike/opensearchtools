@@ -1,7 +1,6 @@
 package osv2
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -144,24 +143,14 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 }
 
 func Test_MGetResult_ToModel(t *testing.T) {
-	type fields struct {
-		Index       string
-		ID          string
-		Version     int
-		SeqNo       int
-		PrimaryTerm int
-		Found       bool
-		Source      json.RawMessage
-		Error       error
-	}
 	tests := []struct {
-		name   string
-		fields fields
-		want   opensearchtools.MGetResult
+		name              string
+		marshalableResult MGetResult
+		want              opensearchtools.MGetResult
 	}{
 		{
 			name: "Non-error result",
-			fields: fields{
+			marshalableResult: MGetResult{
 				Index:       testIndex1,
 				ID:          testID1,
 				Version:     42,
@@ -184,7 +173,7 @@ func Test_MGetResult_ToModel(t *testing.T) {
 		},
 		{
 			name: "Error result",
-			fields: fields{
+			marshalableResult: MGetResult{
 				Error: fmt.Errorf("some OpenSearch error"),
 			},
 			want: opensearchtools.MGetResult{
@@ -195,17 +184,7 @@ func Test_MGetResult_ToModel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			marshalableResult := &MGetResult{
-				Index:       tt.fields.Index,
-				ID:          tt.fields.ID,
-				Version:     tt.fields.Version,
-				SeqNo:       tt.fields.SeqNo,
-				PrimaryTerm: tt.fields.PrimaryTerm,
-				Found:       tt.fields.Found,
-				Source:      tt.fields.Source,
-				Error:       tt.fields.Error,
-			}
-			got := marshalableResult.ToModel()
+			got := tt.marshalableResult.ToModel()
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -215,51 +194,46 @@ func Test_MGetResponse_ToModel(t *testing.T) {
 	testHeaders := http.Header{}
 	testHeaders.Add("x-foo", "bar")
 
-	type fields struct {
-		MarshlableResponse MGetResponse
-	}
 	tests := []struct {
-		name   string
-		fields fields
-		want   *opensearchtools.MGetResponse
+		name               string
+		marshlableResponse MGetResponse
+		want               *opensearchtools.MGetResponse
 	}{
 		{
 			name: "Multiple docs returned",
-			fields: fields{
-				MarshlableResponse: MGetResponse{
-					StatusCode: 200,
-					Header:     testHeaders,
-					Docs: []MGetResult{
-						{
-							Index:       testIndex1,
-							ID:          testID1,
-							Version:     42,
-							SeqNo:       99,
-							PrimaryTerm: 10,
-							Found:       true,
-							Source:      []byte(`{"name": "bob", "age": 42}`),
-							Error:       nil,
-						},
-						{
-							Index:       testIndex2,
-							ID:          testID2,
-							Version:     1,
-							SeqNo:       2,
-							PrimaryTerm: 2,
-							Found:       true,
-							Source:      []byte(`{"deviceName": "abc123", "os": "windows"}`),
-							Error:       nil,
-						},
-						{
-							Index:       testIndex2,
-							ID:          testID2,
-							Version:     10,
-							SeqNo:       220,
-							PrimaryTerm: 30,
-							Found:       false,
-							Source:      []byte{},
-							Error:       nil,
-						},
+			marshlableResponse: MGetResponse{
+				StatusCode: 200,
+				Header:     testHeaders,
+				Docs: []MGetResult{
+					{
+						Index:       testIndex1,
+						ID:          testID1,
+						Version:     42,
+						SeqNo:       99,
+						PrimaryTerm: 10,
+						Found:       true,
+						Source:      []byte(`{"name": "bob", "age": 42}`),
+						Error:       nil,
+					},
+					{
+						Index:       testIndex2,
+						ID:          testID2,
+						Version:     1,
+						SeqNo:       2,
+						PrimaryTerm: 2,
+						Found:       true,
+						Source:      []byte(`{"deviceName": "abc123", "os": "windows"}`),
+						Error:       nil,
+					},
+					{
+						Index:       testIndex2,
+						ID:          testID2,
+						Version:     10,
+						SeqNo:       220,
+						PrimaryTerm: 30,
+						Found:       false,
+						Source:      []byte{},
+						Error:       nil,
 					},
 				},
 			},
@@ -300,12 +274,24 @@ func Test_MGetResponse_ToModel(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "No docs returned",
+			marshlableResponse: MGetResponse{
+				StatusCode: 200,
+				Header:     testHeaders,
+				Docs:       []MGetResult{},
+			},
+			want: &opensearchtools.MGetResponse{
+				StatusCode: 200,
+				Header:     testHeaders,
+				Docs:       []opensearchtools.MGetResult{},
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			marshalableResponse := tt.fields.MarshlableResponse
-			got := marshalableResponse.ToModel()
+			got := tt.marshlableResponse.ToModel()
 			require.Equal(t, tt.want, got)
 		})
 	}
