@@ -22,8 +22,14 @@ type MGetRequest struct {
 	Docs []opensearchtools.RoutableDoc
 }
 
-// Do executes the Multi-Get MGetRequest using the provided opensearch.Client.
+// Do executes the Multi-Get MGetRequest using the provided OpenSearch v2 [opensearch.Client].
 // If the request is executed successfully, then a MGetResponse with MGetResults will be returned.
+// We can perform an MGetRequest as simply as:
+//
+//	mgetResults, mgetError := NewMGetRequest().
+//	    Add("example_index", "example_id").
+//	    Do(context.background(), client)
+//
 // An error can be returned if
 //
 //   - The request to OpenSearch fails

@@ -6,18 +6,30 @@ import (
 	"net/http"
 )
 
-// MGet defines a method which knows how to make an OpenSearch multiple document get.
+// MGet defines a method which knows how to make an OpenSearch [Multi-get] request.
 // It should be implemented by a version-specific executor.
+//
+// [Multi-get]: https://opensearch.org/docs/latest/api-reference/document-apis/multi-get/
 type MGet interface {
 	MGet(ctx context.Context, req *MGetRequest) (*MGetResponse, error)
 }
 
-// MGetRequest wraps the functionality of [opensearchapi.MgetRequest] by supporting request body creation.
-// We can perform an MGetRequest as simply as:
+// MGetRequest is a domain model union type for all the fields of a Multi-Get request for all
+// supported OpenSearch versions.
+// Currently supported versions are:
+//   - OpenSearch 2
 //
-//	mgetResults, mgetError := NewMGetRequest().
-//	    Add("example_index", "totally_real_id").
-//	    Do(context.background(), client)
+// This MGetRequest is intended to be used along with a version-specific executor such as
+// [opensearchtools.osv2.Executor]. For example:
+//
+//	mgetReq := NewMGetRequest().
+//		Add("example_index", "example_id")
+//	mgetResp, err := osv2Executor.MGet(ctx, mgetReq)
+//
+// An error can be returned if
+//
+//   - The request to OpenSearch fails
+//   - The results json cannot be unmarshalled
 type MGetRequest struct {
 	// Index destination for entire request
 	// if used individual documents don't need to specify the index
@@ -53,15 +65,21 @@ func (m *MGetRequest) SetIndex(index string) *MGetRequest {
 	return m
 }
 
-// MGetResponse wraps the functionality of [opensearchapi.Response] by unmarshalling the response body into a
-// slice of [MGetResults].
+// MGetResponse is a domain model response type for Multi-Get for all supported OpenSearch versions.
+// Currently supported versions are:
+//   - OpenSearch 2
+//
+// Contains a slice of [MGetResult] for each document in the response.
 type MGetResponse struct {
 	Header     http.Header
 	StatusCode int
 	Docs       []MGetResult
 }
 
-// MGetResult is the individual result for each requested item.
+// MGetResult is a domain model type representing an individual document result in for a request item
+// in a Multi-Get response for all supported OpenSearch versions.
+// Currently supported versions are:
+//   - OpenSearch 2
 type MGetResult struct {
 	Index       string
 	ID          string
