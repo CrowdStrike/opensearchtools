@@ -58,9 +58,9 @@ func (m *MGetRequest) AddDocs(docs ...RoutableDoc) *MGetRequest {
 	return m
 }
 
-// SetIndex sets the top level index for the request. If a individual document request does not have an index specified,
+// WithIndex sets the top level index for the request. If a individual document request does not have an index specified,
 // this index will be used.
-func (m *MGetRequest) SetIndex(index string) *MGetRequest {
+func (m *MGetRequest) WithIndex(index string) *MGetRequest {
 	m.Index = index
 	return m
 }
