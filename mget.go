@@ -65,7 +65,7 @@ func (m *MGetRequest) SetIndex(index string) *MGetRequest {
 	return m
 }
 
-// MGetResponse is a domain model response type for Multi-Get for all supported OpenSearch versions.
+// MGetResponse is a domain model union response type for Multi-Get for all supported OpenSearch versions.
 // Currently supported versions are:
 //   - OpenSearch 2
 //
@@ -76,7 +76,7 @@ type MGetResponse struct {
 	Docs       []MGetResult
 }
 
-// MGetResult is a domain model type representing an individual document result in for a request item
+// MGetResult is a domain model union type representing an individual document result in for a request item
 // in a Multi-Get response for all supported OpenSearch versions.
 // Currently supported versions are:
 //   - OpenSearch 2

@@ -13,6 +13,8 @@ import (
 )
 
 // MGetRequest is a marshalable form of [opensearchtools.MGetRequest] specific to the opensearchapi.MgetRequest in OpenSearch v2.
+//
+// [Multi-get]: https://opensearch.org/docs/latest/api-reference/document-apis/multi-get/
 type MGetRequest struct {
 	// Index destination for entire request
 	// if used individual documents don't need to specify the index
