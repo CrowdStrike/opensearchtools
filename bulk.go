@@ -37,8 +37,8 @@ func (r *BulkRequest) Add(actions ...BulkAction) *BulkRequest {
 	return r
 }
 
-// SetIndex on the request
-func (r *BulkRequest) SetIndex(index string) *BulkRequest {
+// WithIndex on the request
+func (r *BulkRequest) WithIndex(index string) *BulkRequest {
 	r.Index = index
 	return r
 }
