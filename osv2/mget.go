@@ -24,6 +24,32 @@ type MGetRequest struct {
 	Docs []opensearchtools.RoutableDoc
 }
 
+// NewMGetRequest instantiates an empty [MGetRequest].
+// An empty [MGetRequest] is executable but will return zero documents because zero have been requested.
+func NewMGetRequest() *MGetRequest {
+	return &MGetRequest{}
+}
+
+// WithIndex sets the top level index for the request. If a individual document request does not have an index specified,
+// this index will be used.
+func (m *MGetRequest) WithIndex(index string) *MGetRequest {
+	m.Index = index
+	return m
+}
+
+// Add a [opensearchtools.DocumentRef] to the documents being requested.
+// If index is an empty string, the request relies on the top-level MGetRequest.Index.
+func (m *MGetRequest) Add(index, id string) *MGetRequest {
+	return m.AddDocs(opensearchtools.NewDocumentRef(index, id))
+}
+
+// AddDocs - add any number [opensearchtools.RoutableDoc] to the documents being requested.
+// If the doc does not return anything for [RoutableDoc.Index], the request relies on the top level [MGetRequest.Index].
+func (m *MGetRequest) AddDocs(docs ...opensearchtools.RoutableDoc) *MGetRequest {
+	m.Docs = append(m.Docs, docs...)
+	return m
+}
+
 // Do executes the Multi-Get MGetRequest using the provided OpenSearch v2 [opensearch.Client].
 // If the request is executed successfully, then a MGetResponse with MGetResults will be returned.
 // We can perform an MGetRequest as simply as:

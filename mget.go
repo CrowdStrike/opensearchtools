@@ -45,6 +45,13 @@ func NewMGetRequest() *MGetRequest {
 	return &MGetRequest{}
 }
 
+// WithIndex sets the top level index for the request. If a individual document request does not have an index specified,
+// this index will be used.
+func (m *MGetRequest) WithIndex(index string) *MGetRequest {
+	m.Index = index
+	return m
+}
+
 // Add a [DocumentRef] to the documents being requested.
 // If index is an empty string, the request relies on the top-level MGetRequest.Index.
 func (m *MGetRequest) Add(index, id string) *MGetRequest {
@@ -55,13 +62,6 @@ func (m *MGetRequest) Add(index, id string) *MGetRequest {
 // If the doc does not return anything for [RoutableDoc.Index], the request relies on the top level [MGetRequest.Index].
 func (m *MGetRequest) AddDocs(docs ...RoutableDoc) *MGetRequest {
 	m.Docs = append(m.Docs, docs...)
-	return m
-}
-
-// WithIndex sets the top level index for the request. If a individual document request does not have an index specified,
-// this index will be used.
-func (m *MGetRequest) WithIndex(index string) *MGetRequest {
-	m.Index = index
 	return m
 }
 
