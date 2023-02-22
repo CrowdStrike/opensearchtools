@@ -43,8 +43,12 @@ func (r *BulkRequest) WithIndex(index string) *BulkRequest {
 	return r
 }
 
-// MarshalJSON marshals the BulkRequest into the JSON format expected by OpenSearch
-func (r *BulkRequest) MarshalJSON() ([]byte, error) {
+// ToOpenSearchJSON marshals the BulkRequest into the JSON format expected by OpenSearch.
+// Note: A BulkRequest is multi-line json with new line delimiters. It is not a singular valid json struct.
+//
+// { action1 json }
+// { action2 json }
+func (r *BulkRequest) ToOpenSearchJSON() ([]byte, error) {
 	if len(r.Actions) == 0 {
 		return nil, fmt.Errorf("bulk request requires at least one action")
 	}
@@ -73,7 +77,7 @@ func (r *BulkRequest) MarshalJSON() ([]byte, error) {
 //   - The call to OpenSearch fails
 //   - The result json cannot be unmarshalled
 func (r *BulkRequest) Do(ctx context.Context, client *opensearch.Client) (*BulkResponse, error) {
-	rawBody, jErr := json.Marshal(r)
+	rawBody, jErr := r.ToOpenSearchJSON()
 	if jErr != nil {
 		return nil, jErr
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBulkRequest_MarshalJSON(t *testing.T) {
+func TestBulkRequest_ToOpenSearchJSON(t *testing.T) {
 	testDoc := NewDocumentRef("index", "id")
 
 	testCreateAction := NewCreateBulkAction(testDoc)
@@ -67,7 +67,7 @@ func TestBulkRequest_MarshalJSON(t *testing.T) {
 			r := NewBulkRequest()
 			r.Add(tt.actions...)
 
-			got, err := r.MarshalJSON()
+			got, err := r.ToOpenSearchJSON()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return
