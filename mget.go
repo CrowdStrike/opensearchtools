@@ -3,6 +3,7 @@ package opensearchtools
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -94,4 +95,14 @@ type MGetResult struct {
 // GetSource returns the raw bytes of the document of the [MGetResult].
 func (m MGetResult) GetSource() []byte {
 	return []byte(m.Source)
+}
+
+// ValidateForVersion checks for validation in the [MGetRequest] instance relating to the version of OpenSearch given by v.
+func (m MGetRequest) ValidateForVersion(v Version) (ValidationResults, error) {
+	switch v {
+	case V2:
+		return validateMGetRequestForV2(m), nil
+	default:
+		return nil, fmt.Errorf("Invalid version: %s", v)
+	}
 }
