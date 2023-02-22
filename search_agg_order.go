@@ -1,6 +1,8 @@
-package search
+package opensearchtools
 
-import "encoding/json"
+import (
+	"fmt"
+)
 
 // Order encapsulates the sorting capabilities for [Aggregation] requests to OpenSearch.
 // An empty Order will be rejected by OpenSearch as the target must be non-null and non-empty
@@ -19,12 +21,10 @@ func NewOrder(field string, desc bool) Order {
 
 // ToOpenSearchJSON converts the Order to the correct OpenSearch JSON.
 func (o Order) ToOpenSearchJSON() ([]byte, error) {
-	source := map[string]any{
-		o.Target: "asc",
-	}
+	dir := "asc"
 	if o.Desc {
-		source[o.Target] = "desc"
+		dir = "desc"
 	}
 
-	return json.Marshal(source)
+	return []byte(fmt.Sprintf("{%q: %q}", o.Target, dir)), nil
 }

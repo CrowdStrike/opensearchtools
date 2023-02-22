@@ -40,6 +40,9 @@ type SearchRequest struct {
 
 	// Sort(s) to order the results returned
 	Sort []Sort
+
+	// Aggregations to be performed on the results of the Query
+	Aggregations map[string]Aggregation
 }
 
 // NewSearchRequest instantiates a SearchRequest with a Size of -1.
@@ -77,6 +80,17 @@ func (r *SearchRequest) WithQuery(q Query) *SearchRequest {
 	return r
 }
 
+// AddAggregation to the search request with the desired name
+func (r *SearchRequest) AddAggregation(name string, agg Aggregation) *SearchRequest {
+	if r.Aggregations == nil {
+		r.Aggregations = map[string]Aggregation{name: agg}
+	} else {
+		r.Aggregations[name] = agg
+	}
+
+	return r
+}
+
 // SearchResponse is a domain model union response type across all supported OpenSearch versions.
 // Currently supported versions are:
 //
@@ -96,6 +110,20 @@ type SearchResponse struct {
 
 	// Error if OpenSearch failed but responded with errors
 	Error *Error
+
+	// Aggregations response if any were requested
+	Aggregations map[string]json.RawMessage
+}
+
+// GetAggregationResultSource implements [opensearchtools.AggregationResultSet] to fetch an aggregation result and
+// return the raw JSON source for the provided name.
+func (sr SearchResponse) GetAggregationResultSource(name string) ([]byte, bool) {
+	if len(sr.Aggregations) == 0 {
+		return nil, false
+	}
+
+	aggSource, exists := sr.Aggregations[name]
+	return aggSource, exists
 }
 
 // Hits is a domain model union response type across all supported OpenSearch versions.

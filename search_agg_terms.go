@@ -1,4 +1,4 @@
-package search
+package opensearchtools
 
 import (
 	"encoding/json"
@@ -57,6 +57,22 @@ func (t *TermsAggregation) AddSubAggregation(name string, agg Aggregation) Bucke
 	}
 
 	return t
+}
+
+// ConvertSubAggregations uses the provided converter to convert all the sub aggregations in this TermsAggregation
+func (t *TermsAggregation) ConvertSubAggregations(converter AggregateVersionConverter) (map[string]Aggregation, error) {
+	convertedAggs := make(map[string]Aggregation, len(t.Aggregations))
+
+	for name, agg := range t.Aggregations {
+		cAgg, cErr := converter(agg)
+		if cErr != nil {
+			return nil, cErr
+		}
+
+		convertedAggs[name] = cAgg
+	}
+
+	return convertedAggs, nil
 }
 
 // ToOpenSearchJSON converts the TermsAggregation to the correct OpenSearch JSON.
