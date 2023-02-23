@@ -43,16 +43,28 @@ func (v ValidationResults) IsFatal() bool {
 	return false
 }
 
+// ValidationError is an error which contains ValidationResults
+type ValidationError struct {
+	ValidationResults ValidationResults
+}
+
+// NewValidationError creates a new ValidationError instance with the given ValidationResults
+func NewValidationError(rs ValidationResults) *ValidationError {
+	return &ValidationError{
+		ValidationResults: rs,
+	}
+}
+
 // Error returns a newline-separated string representation of all validation results or an empty string if there are none.
 // Fatal results are prefixed with `fatal:`.
-func (vs ValidationResults) Error() string {
-	if len(vs) == 0 {
+func (e *ValidationError) Error() string {
+	if len(e.ValidationResults) == 0 {
 		return ""
 	}
 
 	var b strings.Builder
 	fmt.Fprintln(&b, "One or more validations failed:")
-	for _, v := range vs {
+	for _, v := range e.ValidationResults {
 		if v.Fatal {
 			fmt.Fprintf(&b, "fatal: %s\n", v.Message)
 		} else {

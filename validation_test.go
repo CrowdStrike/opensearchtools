@@ -99,7 +99,8 @@ func Test_ValidationResults_Error(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, tt.validationResults.Error(), "incorrect Error() result")
+			validationError := NewValidationError(tt.validationResults)
+			require.Equal(t, tt.want, validationError.Error(), "incorrect Error() result")
 		})
 	}
 }
