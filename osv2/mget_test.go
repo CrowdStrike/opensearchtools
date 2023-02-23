@@ -295,3 +295,57 @@ func Test_MGetResponse_ToDomain(t *testing.T) {
 		})
 	}
 }
+
+func Test_MGetRequest_Validate(t *testing.T) {
+	tests := []struct {
+		name        string
+		mgetRequest MGetRequest
+		want        opensearchtools.ValidationResults
+	}{
+		{
+			name: "valid MGetRequest",
+			mgetRequest: MGetRequest{
+				Index: testIndex1,
+				Docs: []opensearchtools.RoutableDoc{
+					opensearchtools.NewDocumentRef(testIndex1, testID1),
+				},
+			},
+			want: nil,
+		},
+		{
+			name: "Doc with no ID",
+			mgetRequest: MGetRequest{
+				Index: testIndex1,
+				Docs: []opensearchtools.RoutableDoc{
+					opensearchtools.NewDocumentRef("", ""),
+				},
+			},
+			want: opensearchtools.ValidationResults{
+				opensearchtools.ValidationResult{
+					Message: "Doc ID is empty",
+					Fatal:   true,
+				},
+			},
+		},
+		{
+			name: "missing index",
+			mgetRequest: MGetRequest{
+				Index: "",
+				Docs: []opensearchtools.RoutableDoc{
+					opensearchtools.NewDocumentRef("", testID1),
+				},
+			},
+			want: opensearchtools.ValidationResults{
+				opensearchtools.ValidationResult{
+					Message: fmt.Sprintf("Index not set at the MGetRequest level nor in the Doc with ID %s", testID1),
+					Fatal:   true,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		v := tt.mgetRequest.Validate()
+		require.Equal(t, tt.want, v, "invalid validation result")
+	}
+}
