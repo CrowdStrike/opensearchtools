@@ -28,7 +28,7 @@ func NewExecutor(client *opensearch.Client) *Executor {
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
 func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (*opensearchtools.MGetResponse, error) {
-	specMGetRequest, err := FromModelMGetRequest(req)
+	specMGetRequest, err := FromDomainMGetRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +38,6 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 		return nil, err
 	}
 
-	modelMGetResponse := specResponse.ToModel()
+	modelMGetResponse := specResponse.ToDomain()
 	return modelMGetResponse, err
 }

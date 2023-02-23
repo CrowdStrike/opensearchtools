@@ -94,8 +94,8 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*MGetR
 	return resp, nil
 }
 
-// FromModelMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest] or an error if there are validation errors.
-func FromModelMGetRequest(req *opensearchtools.MGetRequest) (*MGetRequest, error) {
+// FromDomainMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest] or an error if there are validation errors.
+func FromDomainMGetRequest(req *opensearchtools.MGetRequest) (*MGetRequest, error) {
 	validationResults := req.Validate()
 
 	// Future checks for V2-specific validation errors should go here and be added to validationResults
@@ -142,11 +142,11 @@ type MGetResponse struct {
 	Docs       []MGetResult `json:"docs,omitempty"`
 }
 
-// ToModel converts this instance of an [MGetResponse] into an [opensearchtools.MGetResponse].
-func (r *MGetResponse) ToModel() *opensearchtools.MGetResponse {
+// ToDomain converts this instance of an [MGetResponse] into an [opensearchtools.MGetResponse].
+func (r *MGetResponse) ToDomain() *opensearchtools.MGetResponse {
 	modelDocs := make([]opensearchtools.MGetResult, len(r.Docs))
 	for i, d := range r.Docs {
-		modelDoc := d.ToModel()
+		modelDoc := d.ToDomain()
 		modelDocs[i] = modelDoc
 	}
 
@@ -169,8 +169,8 @@ type MGetResult struct {
 	Error       error           `json:"-"`
 }
 
-// ToModel converts this instance of an [MGetResult] into an [opensearchtools.MGetResult].
-func (r *MGetResult) ToModel() opensearchtools.MGetResult {
+// ToDomain converts this instance of an [MGetResult] into an [opensearchtools.MGetResult].
+func (r *MGetResult) ToDomain() opensearchtools.MGetResult {
 	return opensearchtools.MGetResult{
 		Index:       r.Index,
 		ID:          r.ID,
