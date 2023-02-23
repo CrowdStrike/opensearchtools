@@ -104,12 +104,12 @@ func FromDomainMGetRequest(req *opensearchtools.MGetRequest) (*MGetRequest, erro
 		return nil, opensearchtools.NewValidationError(validationResults)
 	}
 
-	domainMGetRequest := MGetRequest{
+	osv2MGetRequest := MGetRequest{
 		Index: req.Index,
 		Docs:  req.Docs,
 	}
 
-	return &domainMGetRequest, nil
+	return &osv2MGetRequest, nil
 }
 
 // MarshalJSON marshals the [MGetRequest] into the proper json expected by OpenSearch 2.
