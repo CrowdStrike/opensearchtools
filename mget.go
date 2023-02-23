@@ -99,7 +99,7 @@ func (m MGetResult) GetSource() []byte {
 
 // Validate validates the given MGetRequest
 func (m *MGetRequest) Validate() ValidationResults {
-	validationResults := make(ValidationResults, 0)
+	var validationResults ValidationResults
 
 	topLevelIndexIsEmpty := m.Index == ""
 	for _, d := range m.Docs {

@@ -210,7 +210,7 @@ func Test_MGetRequest_ValidateForVersion(t *testing.T) {
 					},
 				},
 			},
-			want: ValidationResults{},
+			want: nil,
 		},
 		{
 			name: "Doc with no ID",
