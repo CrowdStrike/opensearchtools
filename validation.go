@@ -5,16 +5,9 @@ import (
 	"strings"
 )
 
-// Version is a string representation of an OpenSearch major version that this library supports.
-type Version string
-
-const (
-	V2 Version = "V2"
-)
-
-// RequestVersionValidator defines the behavior for validating a model object for a specific OpenSearch version implementation.
-type RequestVersionValidator interface {
-	ValidateForVersion(v Version) (ValidationResults, error)
+// Validator defines the behavior for validating a domain model object.
+type Validator interface {
+	Validate() ValidationResults
 }
 
 // ValidationResult is an individual validation result item to be returned by a [ValidateForVersion] call.

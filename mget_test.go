@@ -200,6 +200,19 @@ func Test_MGetRequest_ValidateForVersion(t *testing.T) {
 		want        ValidationResults
 	}{
 		{
+			name: "valid MGetRequest",
+			mgetRequest: MGetRequest{
+				Index: testIndex1,
+				Docs: []RoutableDoc{
+					DocumentRef{
+						index: testIndex1,
+						id:    testID1,
+					},
+				},
+			},
+			want: ValidationResults{},
+		},
+		{
 			name: "Doc with no ID",
 			mgetRequest: MGetRequest{
 				Index: testIndex1,
@@ -215,7 +228,7 @@ func Test_MGetRequest_ValidateForVersion(t *testing.T) {
 			},
 		},
 		{
-			name: "Top-level Index not set and doc Index not set",
+			name: "missing index",
 			mgetRequest: MGetRequest{
 				Index: "",
 				Docs: []RoutableDoc{
@@ -232,8 +245,7 @@ func Test_MGetRequest_ValidateForVersion(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		v, err := tt.mgetRequest.ValidateForVersion("V2")
-		require.Nil(t, err, "err should be nil")
+		v := tt.mgetRequest.Validate()
 		require.Equal(t, tt.want, v, "invalid validation result")
 	}
 }
