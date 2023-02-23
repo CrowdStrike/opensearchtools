@@ -193,7 +193,7 @@ func TestMGetRequest_AddDocs(t *testing.T) {
 	}
 }
 
-func Test_MGetRequest_ValidateForVersion(t *testing.T) {
+func Test_MGetRequest_Validate(t *testing.T) {
 	tests := []struct {
 		name        string
 		mgetRequest MGetRequest
