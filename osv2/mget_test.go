@@ -126,12 +126,11 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &opensearchtools.MGetRequest{
+			m := &MGetRequest{
 				Index: tt.fields.Index,
 				Docs:  tt.fields.Docs,
 			}
-			marshalableMGetRequest := FromModelMGetRequest(m)
-			got, err := marshalableMGetRequest.MarshalJSON()
+			got, err := m.MarshalJSON()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return

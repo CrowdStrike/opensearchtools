@@ -94,12 +94,22 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*MGetR
 	return resp, nil
 }
 
-// FromModelMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest].
-func FromModelMGetRequest(req *opensearchtools.MGetRequest) *MGetRequest {
-	return &MGetRequest{
+// FromModelMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest] or an error if there are validation errors.
+func FromModelMGetRequest(req *opensearchtools.MGetRequest) (*MGetRequest, error) {
+	validationResults := req.Validate()
+
+	// Future checks for V2-specific validation errors should go here and be added to validationResults
+
+	if validationResults.IsFatal() {
+		return nil, opensearchtools.NewValidationError(validationResults)
+	}
+
+	domainMGetRequest := MGetRequest{
 		Index: req.Index,
 		Docs:  req.Docs,
 	}
+
+	return &domainMGetRequest, nil
 }
 
 // MarshalJSON marshals the [MGetRequest] into the proper json expected by OpenSearch 2.
