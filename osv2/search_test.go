@@ -27,8 +27,8 @@ func TestSearchRequest_ToOpenSearchJSON(t *testing.T) {
 			name: "All Fields",
 			search: NewSearchRequest().
 				WithQuery(opensearchtools.NewTermQuery("field", "value")).
-				WithIndices("test_index").
-				WithSorts(opensearchtools.NewSort("field", true)).
+				AddIndices("test_index").
+				AddSorts(opensearchtools.NewSort("field", true)).
 				WithSize(1),
 			want:    `{"query":{"term":{"field":"value"}},"sort":[{"field":{"order":"desc"}}],"size":1}`,
 			wantErr: false,
@@ -43,21 +43,21 @@ func TestSearchRequest_ToOpenSearchJSON(t *testing.T) {
 		{
 			name: "Set Index", // Query param so no effect on JSON
 			search: NewSearchRequest().
-				WithIndices("test_index"),
+				AddIndices("test_index"),
 			want:    `{}`,
 			wantErr: false,
 		},
 		{
 			name: "Single Sort",
 			search: NewSearchRequest().
-				WithSorts(opensearchtools.NewSort("field", true)),
+				AddSorts(opensearchtools.NewSort("field", true)),
 			want:    `{"sort":[{"field":{"order":"desc"}}]}`,
 			wantErr: false,
 		},
 		{
 			name: "Multi sort",
 			search: NewSearchRequest().
-				WithSorts(opensearchtools.NewSort("field", true), opensearchtools.NewSort("field2", false)),
+				AddSorts(opensearchtools.NewSort("field", true), opensearchtools.NewSort("field2", false)),
 			want:    `{"sort":[{"field":{"order":"desc"}},{"field2":{"order":"asc"}}]}`,
 			wantErr: false,
 		},
@@ -82,7 +82,7 @@ func TestSearchRequest_ToOpenSearchJSON(t *testing.T) {
 	}
 }
 
-func TestHit_ToModel(t *testing.T) {
+func TestHit_ToDomain(t *testing.T) {
 	tests := []struct {
 		name   string
 		target Hit
@@ -111,13 +111,13 @@ func TestHit_ToModel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToModel()
+			got := tt.target.ToDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestTotal_ToModel(t *testing.T) {
+func TestTotal_ToDomain(t *testing.T) {
 	tests := []struct {
 		name   string
 		target Total
@@ -142,13 +142,13 @@ func TestTotal_ToModel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToModel()
+			got := tt.target.ToDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestHits_ToModel(t *testing.T) {
+func TestHits_ToDomain(t *testing.T) {
 	tests := []struct {
 		name   string
 		target Hits
@@ -214,13 +214,13 @@ func TestHits_ToModel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToModel()
+			got := tt.target.ToDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestSearchResponse_ToModel(t *testing.T) {
+func TestSearchResponse_ToDomain(t *testing.T) {
 	testHeader := http.Header{"header": []string{"value"}}
 
 	tests := []struct {
@@ -284,7 +284,7 @@ func TestSearchResponse_ToModel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToModel()
+			got := tt.target.ToDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}

@@ -8,20 +8,20 @@ import (
 	"github.com/CrowdStrike/opensearchtools"
 )
 
-func TestError_ToModel(t *testing.T) {
+func TestError_ToDomain(t *testing.T) {
 	tests := []struct {
 		name   string
-		target *Error
-		want   *opensearchtools.Error
+		target Error
+		want   opensearchtools.Error
 	}{
 		{
 			name:   "Empty",
-			target: &Error{},
-			want:   &opensearchtools.Error{},
+			target: Error{},
+			want:   opensearchtools.Error{},
 		},
 		{
 			name: "All fields, no root cause",
-			target: &Error{
+			target: Error{
 				Type:         "Type",
 				Reason:       "Reason",
 				Index:        "Index",
@@ -29,7 +29,7 @@ func TestError_ToModel(t *testing.T) {
 				ResourceType: "ResourceType",
 				IndexUUID:    "IndexUUID",
 			},
-			want: &opensearchtools.Error{
+			want: opensearchtools.Error{
 				Type:         "Type",
 				Reason:       "Reason",
 				Index:        "Index",
@@ -40,10 +40,10 @@ func TestError_ToModel(t *testing.T) {
 		},
 		{
 			name: "Nested Root Causes",
-			target: &Error{
-				RootCause: []*Error{
+			target: Error{
+				RootCause: []Error{
 					{
-						RootCause: []*Error{
+						RootCause: []Error{
 							{
 								Reason: "final nest",
 							},
@@ -53,10 +53,10 @@ func TestError_ToModel(t *testing.T) {
 				},
 				Reason: "Top Level",
 			},
-			want: &opensearchtools.Error{
-				RootCause: []*opensearchtools.Error{
+			want: opensearchtools.Error{
+				RootCause: []opensearchtools.Error{
 					{
-						RootCause: []*opensearchtools.Error{
+						RootCause: []opensearchtools.Error{
 							{
 								Reason: "final nest",
 							},
@@ -66,16 +66,11 @@ func TestError_ToModel(t *testing.T) {
 				},
 				Reason: "Top Level",
 			},
-		},
-		{
-			name:   "nil",
-			target: nil,
-			want:   nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToModel()
+			got := tt.target.ToDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}

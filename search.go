@@ -15,12 +15,12 @@ type Search interface {
 }
 
 // SearchRequest is a domain model union type for all the fields of a Search request across
-// all supported OpenSearch version.
+// all supported OpenSearch versions.
 // Currently supported versions are:
 //   - OpenSearch 2
 //
 // This SearchRequest is intended to be used along with a version-specific executor such
-// as [opensearchtools.osv2.Executor]. For example:
+// as [opensearchtools/osv2.Executor]. For example:
 //
 //	searchReq := NewSearchRequest().
 //		WithQuery(NewTermQuery("field", "term"))
@@ -40,7 +40,7 @@ type SearchRequest struct {
 	Size int
 
 	// Sort(s) to order the results returned
-	Sort []*Sort
+	Sort []Sort
 }
 
 // NewSearchRequest instantiates a SearchRequest with a Size of -1.
@@ -53,8 +53,8 @@ func NewSearchRequest() *SearchRequest {
 	return &SearchRequest{Size: -1}
 }
 
-// WithIndices sets the index list for the request.
-func (r *SearchRequest) WithIndices(indices ...string) *SearchRequest {
+// AddIndices sets the index list for the request.
+func (r *SearchRequest) AddIndices(indices ...string) *SearchRequest {
 	r.Index = append(r.Index, indices...)
 	return r
 }
@@ -66,8 +66,8 @@ func (r *SearchRequest) WithSize(n int) *SearchRequest {
 	return r
 }
 
-// WithSorts to the current list of [Sort]s on the request.
-func (r *SearchRequest) WithSorts(sort ...*Sort) *SearchRequest {
+// AddSorts to the current list of [Sort]s on the request.
+func (r *SearchRequest) AddSorts(sort ...Sort) *SearchRequest {
 	r.Sort = append(r.Sort, sort...)
 	return r
 }

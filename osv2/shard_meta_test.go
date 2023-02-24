@@ -8,7 +8,7 @@ import (
 	"github.com/CrowdStrike/opensearchtools"
 )
 
-func TestShardMeta_ToModel(t *testing.T) {
+func TestShardMeta_ToDomain(t *testing.T) {
 	tests := []struct {
 		name   string
 		target ShardMeta
@@ -37,7 +37,7 @@ func TestShardMeta_ToModel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToModel()
+			got := tt.target.ToDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}

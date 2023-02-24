@@ -12,8 +12,8 @@ type Sort struct {
 }
 
 // NewSort instantiates a search Sort with the field to be sorted and whether is descending or ascending.
-func NewSort(field string, desc bool) *Sort {
-	return &Sort{
+func NewSort(field string, desc bool) Sort {
+	return Sort{
 		Field: field,
 		Desc:  desc,
 	}

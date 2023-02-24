@@ -12,13 +12,13 @@ import (
 	"github.com/CrowdStrike/opensearchtools"
 )
 
-// SearchRequest is a marshable form of [opensearchtools.SearchRequest] specific to the [opensearchapi.SearchRequest] in OpenSearch V2.
+// SearchRequest is a serializable form of [opensearchtools.SearchRequest] specific to the [opensearchapi.SearchRequest] in OpenSearch V2.
 // An empty SearchRequest defaults to a size of 0. While this will find matches and return a total hits value,
 // it will return no documents. It is recommended to use NewSearchRequest or use WithSize.
 // A simple term query search as an example:
 //
 //	req := NewSearchRequest()
-//	req.WithIndices("example_index")
+//	req.AddIndices("example_index")
 //	req.WithQuery(opensearchtools.NewTermQuery("field", "basic")
 //	results, err := req.Do(context.Background(), client)
 type SearchRequest struct {
@@ -32,7 +32,7 @@ type SearchRequest struct {
 	Size int
 
 	// Sort(s) to order the results returned
-	Sort []*opensearchtools.Sort
+	Sort []opensearchtools.Sort
 }
 
 // V2QueryConverter will do any translations needed from model level queries into V2 specifics, if needed.
@@ -88,8 +88,8 @@ func (r *SearchRequest) ToOpenSearchJSON() ([]byte, error) {
 	return json.Marshal(source)
 }
 
-// WithIndices sets the index list for the request.
-func (r *SearchRequest) WithIndices(indices ...string) *SearchRequest {
+// AddIndices sets the index list for the request.
+func (r *SearchRequest) AddIndices(indices ...string) *SearchRequest {
 	r.Index = append(r.Index, indices...)
 	return r
 }
@@ -101,8 +101,8 @@ func (r *SearchRequest) WithSize(n int) *SearchRequest {
 	return r
 }
 
-// WithSorts to the current list of [opensearchtools.Sort]s on the request.
-func (r *SearchRequest) WithSorts(sort ...*opensearchtools.Sort) *SearchRequest {
+// AddSorts to the current list of [opensearchtools.Sort]s on the request.
+func (r *SearchRequest) AddSorts(sort ...opensearchtools.Sort) *SearchRequest {
 	r.Sort = append(r.Sort, sort...)
 	return r
 }
@@ -113,8 +113,8 @@ func (r *SearchRequest) WithQuery(q opensearchtools.Query) *SearchRequest {
 	return r
 }
 
-// FromModelSearchRequest creates a new SearchRequest from the give [opensearchtools.SearchRequest]
-func FromModelSearchRequest(req *opensearchtools.SearchRequest) (*SearchRequest, error) {
+// FromDomainSearchRequest creates a new SearchRequest from the give [opensearchtools.SearchRequest]
+func FromDomainSearchRequest(req *opensearchtools.SearchRequest) (*SearchRequest, error) {
 	convertedQuery, queryErr := V2QueryConverter(req.Query)
 	if queryErr != nil {
 		return nil, queryErr
@@ -179,17 +179,23 @@ type SearchResponse struct {
 	Error      *Error    `json:"error,omitempty"`
 }
 
-// ToModel converts this instance of a [SearchResponse] into an [opensearchtools.SearchResponse].
-func (sr *SearchResponse) ToModel() opensearchtools.SearchResponse {
-	return opensearchtools.SearchResponse{
+// ToDomain converts this instance of a [SearchResponse] into an [opensearchtools.SearchResponse].
+func (sr *SearchResponse) ToDomain() opensearchtools.SearchResponse {
+	domainResp := opensearchtools.SearchResponse{
 		StatusCode: sr.StatusCode,
 		Header:     sr.Header,
 		Took:       sr.Took,
 		TimedOut:   sr.TimedOut,
-		Shards:     sr.Shards.ToModel(),
-		Hits:       sr.Hits.ToModel(),
-		Error:      sr.Error.ToModel(),
+		Shards:     sr.Shards.ToDomain(),
+		Hits:       sr.Hits.ToDomain(),
 	}
+
+	if sr.Error != nil {
+		domainErr := sr.Error.ToDomain()
+		domainResp.Error = &domainErr
+	}
+
+	return domainResp
 }
 
 // Hits represent the results of the [opensearchtools.Query] performed by the SearchRequest.
@@ -199,15 +205,15 @@ type Hits struct {
 	Hits     []Hit   `json:"hits"`
 }
 
-// ToModel converts this instance of a [Hits] into an [opensearchtools.Hits].
-func (h Hits) ToModel() opensearchtools.Hits {
+// ToDomain converts this instance of a [Hits] into an [opensearchtools.Hits].
+func (h Hits) ToDomain() opensearchtools.Hits {
 	var hits []opensearchtools.Hit
 	for _, hit := range h.Hits {
-		hits = append(hits, hit.ToModel())
+		hits = append(hits, hit.ToDomain())
 	}
 
 	return opensearchtools.Hits{
-		Total:    h.Total.ToModel(),
+		Total:    h.Total.ToDomain(),
 		MaxScore: h.MaxScore,
 		Hits:     hits,
 	}
@@ -219,8 +225,8 @@ type Total struct {
 	Relation string `json:"relation"`
 }
 
-// ToModel converts this instance of a [Total] into an [opensearchtools.Total].
-func (t Total) ToModel() opensearchtools.Total {
+// ToDomain converts this instance of a [Total] into an [opensearchtools.Total].
+func (t Total) ToDomain() opensearchtools.Total {
 	return opensearchtools.Total{
 		Value:    t.Value,
 		Relation: t.Relation,
@@ -235,8 +241,8 @@ type Hit struct {
 	Source json.RawMessage `json:"_source"`
 }
 
-// ToModel converts this instance of a [Hit] into an [opensearchtools.Hit].
-func (h Hit) ToModel() opensearchtools.Hit {
+// ToDomain converts this instance of a [Hit] into an [opensearchtools.Hit].
+func (h Hit) ToDomain() opensearchtools.Hit {
 	return opensearchtools.Hit{
 		Index:  h.Index,
 		ID:     h.ID,
