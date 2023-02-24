@@ -101,7 +101,7 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*opens
 	return &resp, nil
 }
 
-// fromDomainMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest].
+// fromDomainMGetRequest creates a new [MGetRequest] from the given [opensearchtools.MGetRequest].
 func fromDomainMGetRequest(req *opensearchtools.MGetRequest) (MGetRequest, opensearchtools.ValidationResults) {
 	return MGetRequest{
 		Index: req.Index,
@@ -170,7 +170,7 @@ func (r *MGetResponse) toDomain() opensearchtools.MGetResponse {
 	}
 }
 
-// mgetResult is the individual result for each requested item.
+// MGetResult is the individual result for each requested item.
 type MGetResult struct {
 	Index       string          `json:"_index,omitempty"`
 	ID          string          `json:"_id,omitempty"`

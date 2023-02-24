@@ -81,3 +81,31 @@ func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchReques
 		osv2Resp.Response.ToDomain(),
 	), nil
 }
+
+// Bulk executes the BulkRequest using the provided [opensearchtools.BulkRequest].
+// If the request is executed successfully, then an
+// [opensearchtools.OpenSearchResponse] containing a [opensearchtools.BulkResponse]
+// An error can be returned if:
+//   - The request to OpenSearch fails
+//   - The results json cannot be unmarshalled
+func (e *Executor) Bulk(ctx context.Context, req *opensearchtools.BulkRequest) (*opensearchtools.OpenSearchResponse[opensearchtools.BulkResponse], error) {
+	osv2Req := fromDomainBulkRequest(req)
+	validationRes := osv2Req.Validate()
+	if validationRes.IsFatal() {
+		return nil, opensearchtools.NewValidationError(validationRes)
+	}
+
+	bulkResp, err := osv2Req.Do(ctx, e.Client)
+	if err != nil {
+		return nil, err
+	}
+
+	domainResp := bulkResp.Response.toDomain()
+
+	return &opensearchtools.OpenSearchResponse[opensearchtools.BulkResponse]{
+		ValidationResults: validationRes,
+		StatusCode:        bulkResp.StatusCode,
+		Header:            bulkResp.Header,
+		Response:          &domainResp,
+	}, nil
+}
