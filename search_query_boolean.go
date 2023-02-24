@@ -1,4 +1,4 @@
-package search
+package opensearchtools
 
 import "encoding/json"
 
@@ -68,7 +68,7 @@ func (q *BoolQuery) ToOpenSearchJSON() ([]byte, error) {
 		bq[minimumShouldMatch] = q.minimumShouldMatch
 	}
 
-	must, mErr := convertSubQueries(q.must)
+	must, mErr := boolQueriesToOpenSearchJSON(q.must)
 	if mErr != nil {
 		return nil, mErr
 	}
@@ -77,7 +77,7 @@ func (q *BoolQuery) ToOpenSearchJSON() ([]byte, error) {
 		bq["must"] = must
 	}
 
-	mustNot, mnErr := convertSubQueries(q.mustNot)
+	mustNot, mnErr := boolQueriesToOpenSearchJSON(q.mustNot)
 	if mnErr != nil {
 		return nil, mnErr
 	}
@@ -86,7 +86,7 @@ func (q *BoolQuery) ToOpenSearchJSON() ([]byte, error) {
 		bq["must_not"] = mustNot
 	}
 
-	should, sErr := convertSubQueries(q.should)
+	should, sErr := boolQueriesToOpenSearchJSON(q.should)
 	if sErr != nil {
 		return nil, sErr
 	}
@@ -95,7 +95,7 @@ func (q *BoolQuery) ToOpenSearchJSON() ([]byte, error) {
 		bq["should"] = should
 	}
 
-	filter, fErr := convertSubQueries(q.filter)
+	filter, fErr := boolQueriesToOpenSearchJSON(q.filter)
 	if fErr != nil {
 		return nil, fErr
 	}
@@ -111,8 +111,8 @@ func (q *BoolQuery) ToOpenSearchJSON() ([]byte, error) {
 	return json.Marshal(source)
 }
 
-// convertSubQueries is a utility method to convert all sub queries to their OpenSearch source.
-func convertSubQueries(queries []Query) (json.RawMessage, error) {
+// boolQueriesToOpenSearchJSON is a utility method to convert all sub queries to their OpenSearch source.
+func boolQueriesToOpenSearchJSON(queries []Query) (json.RawMessage, error) {
 	if len(queries) == 0 {
 		return nil, nil
 	}

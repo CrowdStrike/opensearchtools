@@ -1,4 +1,4 @@
-package search
+package opensearchtools
 
 import "encoding/json"
 

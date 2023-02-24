@@ -1,4 +1,4 @@
-package search
+package opensearchtools
 
 import (
 	"testing"
@@ -6,35 +6,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTermQuery_ToOpenSearchJSON(t *testing.T) {
+func TestPrefixQuery_ToOpenSearchJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		query   *TermQuery
+		query   *PrefixQuery
 		want    string
 		wantErr bool
 	}{
 		{
 			name:    "Empty Query",
-			query:   &TermQuery{},
-			want:    `{"term":{"":null}}`,
+			query:   &PrefixQuery{},
+			want:    `{"prefix":{"":null}}`,
 			wantErr: false,
 		},
 		{
 			name:    "Simple Success",
-			query:   NewTermQuery("field", "value"),
-			want:    `{"term":{"field":"value"}}`,
+			query:   NewPrefixQuery("field", "value"),
+			want:    `{"prefix":{"field":"value"}}`,
 			wantErr: false,
 		},
 		{
-			name:    "Search for empty value",
-			query:   NewTermQuery("field", ""),
-			want:    `{"term":{"field":""}}`,
-			wantErr: false,
-		},
-		{
-			name:    "Search for empty field and value",
-			query:   NewTermQuery("", ""),
-			want:    `{"term":{"":""}}`,
+			name:    "Empty Value",
+			query:   NewPrefixQuery("field", ""),
+			want:    `{"prefix":{"field":""}}`,
 			wantErr: false,
 		},
 	}

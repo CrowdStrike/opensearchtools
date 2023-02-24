@@ -1,4 +1,4 @@
-package search
+package opensearchtools
 
 import (
 	"testing"
@@ -6,29 +6,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWildcardQuery_ToOpenSearchJSON(t *testing.T) {
+func TestRegexQuery_ToOpenSearchJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		query   *WildcardQuery
+		query   *RegexQuery
 		want    string
 		wantErr bool
 	}{
 		{
 			name:    "Empty Query",
-			query:   &WildcardQuery{},
-			want:    `{"wildcard":{"":""}}`,
+			query:   &RegexQuery{},
+			want:    `{"regexp":{"":""}}`,
 			wantErr: false,
 		},
 		{
-			name:    "Simple Success",
-			query:   NewWildcardQuery("field", "value"),
-			want:    `{"wildcard":{"field":"value"}}`,
-			wantErr: false,
-		},
-		{
-			name:    "Search for empty value",
-			query:   NewWildcardQuery("field", ""),
-			want:    `{"wildcard":{"field":""}}`,
+			name:    "Basic Constructor",
+			query:   NewRegexQuery("field", "^value$"),
+			want:    `{"regexp":{"field":"^value$"}}`,
 			wantErr: false,
 		},
 	}
