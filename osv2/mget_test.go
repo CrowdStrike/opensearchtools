@@ -238,9 +238,9 @@ func Test_MGetResponse_ToDomain(t *testing.T) {
 			},
 			want: &opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
 				ValidationResults: nil,
+				StatusCode:        200,
+				Header:            testHeaders,
 				Response: &opensearchtools.MGetResponse{
-					StatusCode: 200,
-					Header:     testHeaders,
 					Docs: []opensearchtools.MGetResult{
 						{
 							Index:       testIndex1,
@@ -285,10 +285,10 @@ func Test_MGetResponse_ToDomain(t *testing.T) {
 			},
 			want: &opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
 				ValidationResults: nil,
+				StatusCode:        200,
+				Header:            testHeaders,
 				Response: &opensearchtools.MGetResponse{
-					StatusCode: 200,
-					Header:     testHeaders,
-					Docs:       []opensearchtools.MGetResult{},
+					Docs: []opensearchtools.MGetResult{},
 				},
 			},
 		},

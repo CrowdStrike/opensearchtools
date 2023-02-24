@@ -176,13 +176,13 @@ func (r *MGetResponse) ToDomain(vrs opensearchtools.ValidationResults) *opensear
 	}
 
 	domainMGetResponse := opensearchtools.MGetResponse{
-		StatusCode: r.StatusCode,
-		Header:     r.Header,
-		Docs:       modelDocs,
+		Docs: modelDocs,
 	}
 
 	resp := opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
 		ValidationResults: vrs,
+		StatusCode:        r.StatusCode,
+		Header:            r.Header,
 		Response:          &domainMGetResponse,
 	}
 
