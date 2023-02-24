@@ -1,7 +1,6 @@
 package opensearchtools
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -190,62 +189,5 @@ func TestMGetRequest_AddDocs(t *testing.T) {
 				require.Equal(t, wantDoc.index, gotDoc.Index())
 			}
 		})
-	}
-}
-
-func Test_MGetRequest_Validate(t *testing.T) {
-	tests := []struct {
-		name        string
-		mgetRequest MGetRequest
-		want        ValidationResults
-	}{
-		{
-			name: "valid MGetRequest",
-			mgetRequest: MGetRequest{
-				Index: testIndex1,
-				Docs: []RoutableDoc{
-					DocumentRef{
-						index: testIndex1,
-						id:    testID1,
-					},
-				},
-			},
-			want: nil,
-		},
-		{
-			name: "Doc with no ID",
-			mgetRequest: MGetRequest{
-				Index: testIndex1,
-				Docs: []RoutableDoc{
-					NewDocumentRef("", ""),
-				},
-			},
-			want: ValidationResults{
-				ValidationResult{
-					Message: "Doc ID is empty",
-					Fatal:   true,
-				},
-			},
-		},
-		{
-			name: "missing index",
-			mgetRequest: MGetRequest{
-				Index: "",
-				Docs: []RoutableDoc{
-					NewDocumentRef("", testID1),
-				},
-			},
-			want: ValidationResults{
-				ValidationResult{
-					Message: fmt.Sprintf("Index not set at the MGetRequest level nor in the Doc with ID %s", testID1),
-					Fatal:   true,
-				},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		v := tt.mgetRequest.Validate()
-		require.Equal(t, tt.want, v, "invalid validation result")
 	}
 }

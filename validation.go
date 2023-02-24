@@ -73,3 +73,8 @@ func (e *ValidationError) Error() string {
 	}
 	return b.String()
 }
+
+type Validation[T any] struct {
+	ValidationResults ValidationResults
+	ValidatedRequest  *T
+}

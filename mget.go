@@ -3,7 +3,6 @@ package opensearchtools
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -95,24 +94,4 @@ type MGetResult struct {
 // GetSource returns the raw bytes of the document of the [MGetResult].
 func (m MGetResult) GetSource() []byte {
 	return []byte(m.Source)
-}
-
-// Validate validates the given MGetRequest
-func (m *MGetRequest) Validate() ValidationResults {
-	var validationResults ValidationResults
-
-	topLevelIndexIsEmpty := m.Index == ""
-	for _, d := range m.Docs {
-		// ensure Index is either set at the top level or set in each of the Docs
-		if topLevelIndexIsEmpty && d.Index() == "" {
-			validationResults = append(validationResults, NewValidationResult(fmt.Sprintf("Index not set at the MGetRequest level nor in the Doc with ID %s", d.ID()), true))
-		}
-
-		// ensure that ID() is non-empty for each Doc
-		if d.ID() == "" {
-			validationResults = append(validationResults, NewValidationResult("Doc ID is empty", true))
-		}
-	}
-
-	return validationResults
 }
