@@ -95,25 +95,12 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*MGetR
 	return resp, nil
 }
 
-// FromDomainMGetRequest creates, validates and returns a new [mgetRequest] from the given [opensearchtools.MGetRequest] or
-// returns an error if there are validation errors.
-func FromDomainMGetRequest(req *opensearchtools.MGetRequest) (*opensearchtools.OpenSearchRequestValidation[MGetRequest], error) {
-	osv2MGetRequest := MGetRequest{
+// FromDomainMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest].
+func FromDomainMGetRequest(req *opensearchtools.MGetRequest) *MGetRequest {
+	return &MGetRequest{
 		Index: req.Index,
 		Docs:  req.Docs,
 	}
-
-	validationResults := osv2MGetRequest.Validate()
-	if validationResults.IsFatal() {
-		return nil, opensearchtools.NewValidationError(validationResults)
-	}
-
-	validation := opensearchtools.OpenSearchRequestValidation[MGetRequest]{
-		ValidationResults: validationResults,
-		ValidatedRequest:  &osv2MGetRequest,
-	}
-
-	return &validation, nil
 }
 
 // Validate validates the given MGetRequest

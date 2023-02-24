@@ -73,10 +73,3 @@ func (e *ValidationError) Error() string {
 	}
 	return b.String()
 }
-
-// OpenSearchRequestValidation encapsulates the ValidationRequests and a valid request object, allowing
-// you a consumer to access all [ValidationResults] if there are no fatal validation results.
-type OpenSearchRequestValidation[T any] struct {
-	ValidationResults ValidationResults
-	ValidatedRequest  *T
-}

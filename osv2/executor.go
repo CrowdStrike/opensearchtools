@@ -28,15 +28,16 @@ func NewExecutor(client *opensearch.Client) *Executor {
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
 func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (*opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse], error) {
-	mgetReqValidation, err := FromDomainMGetRequest(req)
+	osv2Req := FromDomainMGetRequest(req)
+	validationRes := osv2Req.Validate()
+	if validationRes.IsFatal() {
+		return nil, opensearchtools.NewValidationError(validationRes)
+	}
+
+	osv2Resp, err := osv2Req.Do(ctx, e.Client)
 	if err != nil {
 		return nil, err
 	}
 
-	specResponse, err := mgetReqValidation.ValidatedRequest.Do(ctx, e.Client)
-	if err != nil {
-		return nil, err
-	}
-
-	return specResponse.ToDomain(mgetReqValidation.ValidationResults), err
+	return osv2Resp.ToDomain(validationRes), err
 }
