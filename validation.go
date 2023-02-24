@@ -78,3 +78,8 @@ type Validation[T any] struct {
 	ValidationResults ValidationResults
 	ValidatedRequest  *T
 }
+
+type OpenSearchResponse[T any] struct {
+	ValidationResults ValidationResults
+	Response          *T
+}

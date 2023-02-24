@@ -27,7 +27,7 @@ func NewExecutor(client *opensearch.Client) *Executor {
 // An error can be returned if:
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
-func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (*opensearchtools.Validation[opensearchtools.MGetResponse], error) {
+func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (*opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse], error) {
 	mgetReqValidation, err := FromDomainMGetRequest(req)
 	if err != nil {
 		return nil, err
@@ -38,12 +38,9 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 		return nil, err
 	}
 
-	modelMGetResponse := specResponse.ToDomain()
+	resp := specResponse.
+		ToDomain().
+		ToOpenSearchResponse(mgetReqValidation.ValidationResults)
 
-	validation := opensearchtools.Validation[opensearchtools.MGetResponse]{
-		ValidationResults: mgetReqValidation.ValidationResults,
-		ValidatedRequest:  modelMGetResponse,
-	}
-
-	return &validation, err
+	return resp, err
 }

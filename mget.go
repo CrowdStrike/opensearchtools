@@ -95,3 +95,13 @@ type MGetResult struct {
 func (m MGetResult) GetSource() []byte {
 	return []byte(m.Source)
 }
+
+// ToOpenSearchResponse creates a new OpenSearchResponse[MGetResponse] from this MGetResponse and
+// the given ValidationResults
+func (m *MGetResponse) ToOpenSearchResponse(vrs ValidationResults) *OpenSearchResponse[MGetResponse] {
+	resp := OpenSearchResponse[MGetResponse]{
+		ValidationResults: vrs,
+		Response:          m,
+	}
+	return &resp
+}
