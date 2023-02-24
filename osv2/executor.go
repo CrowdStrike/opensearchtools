@@ -38,9 +38,5 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 		return nil, err
 	}
 
-	resp := specResponse.
-		ToDomain().
-		ToOpenSearchResponse(mgetReqValidation.ValidationResults)
-
-	return resp, err
+	return specResponse.ToDomain(mgetReqValidation.ValidationResults), err
 }

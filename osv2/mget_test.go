@@ -196,7 +196,7 @@ func Test_MGetResponse_ToDomain(t *testing.T) {
 	tests := []struct {
 		name               string
 		marshlableResponse MGetResponse
-		want               *opensearchtools.MGetResponse
+		want               *opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]
 	}{
 		{
 			name: "Multiple docs returned",
@@ -236,39 +236,42 @@ func Test_MGetResponse_ToDomain(t *testing.T) {
 					},
 				},
 			},
-			want: &opensearchtools.MGetResponse{
-				StatusCode: 200,
-				Header:     testHeaders,
-				Docs: []opensearchtools.MGetResult{
-					{
-						Index:       testIndex1,
-						ID:          testID1,
-						Version:     42,
-						SeqNo:       99,
-						PrimaryTerm: 10,
-						Found:       true,
-						Source:      []byte(`{"name": "bob", "age": 42}`),
-						Error:       nil,
-					},
-					{
-						Index:       testIndex2,
-						ID:          testID2,
-						Version:     1,
-						SeqNo:       2,
-						PrimaryTerm: 2,
-						Found:       true,
-						Source:      []byte(`{"deviceName": "abc123", "os": "windows"}`),
-						Error:       nil,
-					},
-					{
-						Index:       testIndex2,
-						ID:          testID2,
-						Version:     10,
-						SeqNo:       220,
-						PrimaryTerm: 30,
-						Found:       false,
-						Source:      []byte{},
-						Error:       nil,
+			want: &opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
+				ValidationResults: nil,
+				Response: &opensearchtools.MGetResponse{
+					StatusCode: 200,
+					Header:     testHeaders,
+					Docs: []opensearchtools.MGetResult{
+						{
+							Index:       testIndex1,
+							ID:          testID1,
+							Version:     42,
+							SeqNo:       99,
+							PrimaryTerm: 10,
+							Found:       true,
+							Source:      []byte(`{"name": "bob", "age": 42}`),
+							Error:       nil,
+						},
+						{
+							Index:       testIndex2,
+							ID:          testID2,
+							Version:     1,
+							SeqNo:       2,
+							PrimaryTerm: 2,
+							Found:       true,
+							Source:      []byte(`{"deviceName": "abc123", "os": "windows"}`),
+							Error:       nil,
+						},
+						{
+							Index:       testIndex2,
+							ID:          testID2,
+							Version:     10,
+							SeqNo:       220,
+							PrimaryTerm: 30,
+							Found:       false,
+							Source:      []byte{},
+							Error:       nil,
+						},
 					},
 				},
 			},
@@ -280,17 +283,22 @@ func Test_MGetResponse_ToDomain(t *testing.T) {
 				Header:     testHeaders,
 				Docs:       []MGetResult{},
 			},
-			want: &opensearchtools.MGetResponse{
-				StatusCode: 200,
-				Header:     testHeaders,
-				Docs:       []opensearchtools.MGetResult{},
+			want: &opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
+				ValidationResults: nil,
+				Response: &opensearchtools.MGetResponse{
+					StatusCode: 200,
+					Header:     testHeaders,
+					Docs:       []opensearchtools.MGetResult{},
+				},
 			},
 		},
 	}
 
+	var vrs opensearchtools.ValidationResults
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.marshlableResponse.ToDomain()
+			got := tt.marshlableResponse.ToDomain(vrs)
 			require.Equal(t, tt.want, got)
 		})
 	}
