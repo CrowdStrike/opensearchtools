@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/opensearch-project/opensearch-go/v2"
@@ -94,12 +95,32 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*MGetR
 	return resp, nil
 }
 
-// FromModelMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest].
-func FromModelMGetRequest(req *opensearchtools.MGetRequest) *MGetRequest {
-	return &MGetRequest{
+// fromDomainMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest].
+func fromDomainMGetRequest(req *opensearchtools.MGetRequest) MGetRequest {
+	return MGetRequest{
 		Index: req.Index,
 		Docs:  req.Docs,
 	}
+}
+
+// Validate validates the given MGetRequest
+func (m *MGetRequest) Validate() opensearchtools.ValidationResults {
+	var validationResults opensearchtools.ValidationResults
+
+	topLevelIndexIsEmpty := m.Index == ""
+	for _, d := range m.Docs {
+		// ensure Index is either set at the top level or set in each of the Docs
+		if topLevelIndexIsEmpty && d.Index() == "" {
+			validationResults = append(validationResults, opensearchtools.NewValidationResult(fmt.Sprintf("Index not set at the MGetRequest level nor in the Doc with ID %s", d.ID()), true))
+		}
+
+		// ensure that ID() is non-empty for each Doc
+		if d.ID() == "" {
+			validationResults = append(validationResults, opensearchtools.NewValidationResult("Doc ID is empty", true))
+		}
+	}
+
+	return validationResults
 }
 
 // MarshalJSON marshals the [MGetRequest] into the proper json expected by OpenSearch 2.
@@ -132,19 +153,27 @@ type MGetResponse struct {
 	Docs       []MGetResult `json:"docs,omitempty"`
 }
 
-// ToModel converts this instance of an [MGetResponse] into an [opensearchtools.MGetResponse].
-func (r *MGetResponse) ToModel() *opensearchtools.MGetResponse {
+// ToDomain converts this instance of an [MGetResponse] along with the given [opensearchtools.ValidationResults]
+// into an [opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]].
+func (r *MGetResponse) ToDomain(vrs opensearchtools.ValidationResults) *opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse] {
 	modelDocs := make([]opensearchtools.MGetResult, len(r.Docs))
 	for i, d := range r.Docs {
-		modelDoc := d.ToModel()
+		modelDoc := d.ToDomain()
 		modelDocs[i] = modelDoc
 	}
 
-	return &opensearchtools.MGetResponse{
-		StatusCode: r.StatusCode,
-		Header:     r.Header,
-		Docs:       modelDocs,
+	domainMGetResponse := opensearchtools.MGetResponse{
+		Docs: modelDocs,
 	}
+
+	resp := opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
+		ValidationResults: vrs,
+		StatusCode:        r.StatusCode,
+		Header:            r.Header,
+		Response:          &domainMGetResponse,
+	}
+
+	return &resp
 }
 
 // mgetResult is the individual result for each requested item.
@@ -159,8 +188,8 @@ type MGetResult struct {
 	Error       error           `json:"-"`
 }
 
-// ToModel converts this instance of an [MGetResult] into an [opensearchtools.MGetResult].
-func (r *MGetResult) ToModel() opensearchtools.MGetResult {
+// ToDomain converts this instance of an [MGetResult] into an [opensearchtools.MGetResult].
+func (r *MGetResult) ToDomain() opensearchtools.MGetResult {
 	return opensearchtools.MGetResult{
 		Index:       r.Index,
 		ID:          r.ID,

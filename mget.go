@@ -3,7 +3,6 @@ package opensearchtools
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 )
 
 // MGet defines a method which knows how to make an OpenSearch [Multi-get] request.
@@ -71,9 +70,7 @@ func (m *MGetRequest) AddDocs(docs ...RoutableDoc) *MGetRequest {
 //
 // Contains a slice of [MGetResult] for each document in the response.
 type MGetResponse struct {
-	Header     http.Header
-	StatusCode int
-	Docs       []MGetResult
+	Docs []MGetResult
 }
 
 // MGetResult is a domain model union type representing an individual document result in for a request item
