@@ -13,12 +13,12 @@ type Error struct {
 	IndexUUID    string  `json:"index_uuid"`
 }
 
-// ToDomain converts this instance of an Error into an [opensearchtools.Error]
-func (e *Error) ToDomain() opensearchtools.Error {
+// toDomain converts this instance of an Error into an [opensearchtools.Error]
+func (e *Error) toDomain() opensearchtools.Error {
 	var modelRootCauses []opensearchtools.Error
 
 	for _, specErr := range e.RootCause {
-		modelRootCauses = append(modelRootCauses, specErr.ToDomain())
+		modelRootCauses = append(modelRootCauses, specErr.toDomain())
 	}
 
 	return opensearchtools.Error{

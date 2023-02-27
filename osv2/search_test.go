@@ -2,7 +2,6 @@ package osv2
 
 import (
 	"encoding/json"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -111,7 +110,7 @@ func TestHit_ToDomain(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToDomain()
+			got := tt.target.toDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -142,7 +141,7 @@ func TestTotal_ToDomain(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToDomain()
+			got := tt.target.toDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -214,14 +213,13 @@ func TestHits_ToDomain(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToDomain()
+			got := tt.target.toDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestSearchResponse_ToDomain(t *testing.T) {
-	testHeader := http.Header{"header": []string{"value"}}
 
 	tests := []struct {
 		name   string
@@ -236,29 +234,23 @@ func TestSearchResponse_ToDomain(t *testing.T) {
 		{
 			name: "Successful request",
 			target: SearchResponse{
-				StatusCode: http.StatusOK,
-				Header:     testHeader,
-				Took:       100,
-				TimedOut:   false,
-				Shards:     ShardMeta{Total: 10},
-				Hits:       Hits{MaxScore: 10},
-				Error:      nil,
+				Took:     100,
+				TimedOut: false,
+				Shards:   ShardMeta{Total: 10},
+				Hits:     Hits{MaxScore: 10},
+				Error:    nil,
 			},
 			want: opensearchtools.SearchResponse{
-				StatusCode: http.StatusOK,
-				Header:     testHeader,
-				Took:       100,
-				TimedOut:   false,
-				Shards:     opensearchtools.ShardMeta{Total: 10},
-				Hits:       opensearchtools.Hits{MaxScore: 10},
-				Error:      nil,
+				Took:     100,
+				TimedOut: false,
+				Shards:   opensearchtools.ShardMeta{Total: 10},
+				Hits:     opensearchtools.Hits{MaxScore: 10},
+				Error:    nil,
 			},
 		},
 		{
 			name: "Unsuccessful request",
 			target: SearchResponse{
-				StatusCode: http.StatusConflict,
-				Header:     testHeader,
 				Error: &Error{
 					Type:         "It was bad",
 					Reason:       "for a reason",
@@ -269,8 +261,6 @@ func TestSearchResponse_ToDomain(t *testing.T) {
 				},
 			},
 			want: opensearchtools.SearchResponse{
-				StatusCode: http.StatusConflict,
-				Header:     testHeader,
 				Error: &opensearchtools.Error{
 					Type:         "It was bad",
 					Reason:       "for a reason",

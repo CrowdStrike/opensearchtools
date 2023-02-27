@@ -3,7 +3,6 @@ package opensearchtools
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 )
 
 // Search defines a method which knows how to make an OpenSearch [Search] request.
@@ -11,7 +10,7 @@ import (
 //
 // [Search]: https://openorg/docs/latest/api-reference/search/
 type Search interface {
-	Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error)
+	Search(ctx context.Context, req *SearchRequest) (OpenSearchResponse[*SearchResponse], error)
 }
 
 // SearchRequest is a domain model union type for all the fields of a Search request across
@@ -83,12 +82,6 @@ func (r *SearchRequest) WithQuery(q Query) *SearchRequest {
 //
 //	-OpenSearch2
 type SearchResponse struct {
-	// StatusCode of the http request
-	StatusCode int
-
-	// Header details returned by OpenSearch
-	Header http.Header
-
 	// Took the time in Milliseconds OpenSearch took to execute the query
 	Took int
 

@@ -37,7 +37,7 @@ func TestShardMeta_ToDomain(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToDomain()
+			got := tt.target.toDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}

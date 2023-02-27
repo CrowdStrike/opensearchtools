@@ -11,8 +11,8 @@ type ShardMeta struct {
 	Failed     int `json:"failed"`
 }
 
-// ToDomain converts this instance of an ShardMeta into an [opensearchtools.ShardMeta]
-func (s *ShardMeta) ToDomain() opensearchtools.ShardMeta {
+// toDomain converts this instance of an ShardMeta into an [opensearchtools.ShardMeta]
+func (s *ShardMeta) toDomain() opensearchtools.ShardMeta {
 	return opensearchtools.ShardMeta{
 		Total:      s.Total,
 		Successful: s.Successful,

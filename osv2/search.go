@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
 
 	"github.com/opensearch-project/opensearch-go/v2"
 	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
@@ -35,7 +34,7 @@ type SearchRequest struct {
 	Sort []opensearchtools.Sort
 }
 
-// V2QueryConverter will do any translations needed from model level queries into V2 specifics, if needed.
+// V2QueryConverter will do any translations needed from domain level queries into V2 specifics, if needed.
 func V2QueryConverter(query opensearchtools.Query) (opensearchtools.Query, error) {
 	switch q := query.(type) {
 	case *opensearchtools.BoolQuery:
@@ -113,8 +112,8 @@ func (r *SearchRequest) WithQuery(q opensearchtools.Query) *SearchRequest {
 	return r
 }
 
-// FromDomainSearchRequest creates a new SearchRequest from the give [opensearchtools.SearchRequest]
-func FromDomainSearchRequest(req *opensearchtools.SearchRequest) (*SearchRequest, error) {
+// fromDomainSearchRequest creates a new SearchRequest from the give [opensearchtools.SearchRequest]
+func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (*SearchRequest, error) {
 	convertedQuery, queryErr := V2QueryConverter(req.Query)
 	if queryErr != nil {
 		return nil, queryErr
@@ -136,7 +135,7 @@ func FromDomainSearchRequest(req *opensearchtools.SearchRequest) (*SearchRequest
 //   - The source fails to be marshaled to JSON
 //   - The OpenSearch request fails to executed
 //   - The OpenSearch response cannot be parsed
-func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*SearchResponse, error) {
+func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.OpenSearchResponse[SearchResponse], error) {
 	bodyBytes, jErr := r.ToOpenSearchJSON()
 	if jErr != nil {
 		return nil, jErr
@@ -156,42 +155,40 @@ func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*Sea
 		return nil, err
 	}
 
-	resp := &SearchResponse{
-		StatusCode: osResp.StatusCode,
-		Header:     osResp.Header,
-	}
+	var resp SearchResponse
 
 	if err := json.Unmarshal(respBuf.Bytes(), &resp); err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	return &opensearchtools.OpenSearchResponse[SearchResponse]{
+		ValidationResults: nil,
+		StatusCode:        osResp.StatusCode,
+		Header:            osResp.Header,
+		Response:          &resp,
+	}, nil
 }
 
 // SearchResponse wraps the functionality of [opensearchapi.Response] by supporting request parsing.
 type SearchResponse struct {
-	StatusCode int
-	Header     http.Header
-	Took       int       `json:"took"`
-	TimedOut   bool      `json:"timed_out"`
-	Shards     ShardMeta `json:"_shards,omitempty"`
-	Hits       Hits      `json:"hits"`
-	Error      *Error    `json:"error,omitempty"`
+	Took     int       `json:"took"`
+	TimedOut bool      `json:"timed_out"`
+	Shards   ShardMeta `json:"_shards,omitempty"`
+	Hits     Hits      `json:"hits"`
+	Error    *Error    `json:"error,omitempty"`
 }
 
 // ToDomain converts this instance of a [SearchResponse] into an [opensearchtools.SearchResponse].
 func (sr *SearchResponse) ToDomain() opensearchtools.SearchResponse {
 	domainResp := opensearchtools.SearchResponse{
-		StatusCode: sr.StatusCode,
-		Header:     sr.Header,
-		Took:       sr.Took,
-		TimedOut:   sr.TimedOut,
-		Shards:     sr.Shards.ToDomain(),
-		Hits:       sr.Hits.ToDomain(),
+		Took:     sr.Took,
+		TimedOut: sr.TimedOut,
+		Shards:   sr.Shards.toDomain(),
+		Hits:     sr.Hits.toDomain(),
 	}
 
 	if sr.Error != nil {
-		domainErr := sr.Error.ToDomain()
+		domainErr := sr.Error.toDomain()
 		domainResp.Error = &domainErr
 	}
 
@@ -205,15 +202,15 @@ type Hits struct {
 	Hits     []Hit   `json:"hits"`
 }
 
-// ToDomain converts this instance of a [Hits] into an [opensearchtools.Hits].
-func (h Hits) ToDomain() opensearchtools.Hits {
+// toDomain converts this instance of a [Hits] into an [opensearchtools.Hits].
+func (h Hits) toDomain() opensearchtools.Hits {
 	var hits []opensearchtools.Hit
 	for _, hit := range h.Hits {
-		hits = append(hits, hit.ToDomain())
+		hits = append(hits, hit.toDomain())
 	}
 
 	return opensearchtools.Hits{
-		Total:    h.Total.ToDomain(),
+		Total:    h.Total.toDomain(),
 		MaxScore: h.MaxScore,
 		Hits:     hits,
 	}
@@ -225,8 +222,8 @@ type Total struct {
 	Relation string `json:"relation"`
 }
 
-// ToDomain converts this instance of a [Total] into an [opensearchtools.Total].
-func (t Total) ToDomain() opensearchtools.Total {
+// toDomain converts this instance of a [Total] into an [opensearchtools.Total].
+func (t Total) toDomain() opensearchtools.Total {
 	return opensearchtools.Total{
 		Value:    t.Value,
 		Relation: t.Relation,
@@ -241,8 +238,8 @@ type Hit struct {
 	Source json.RawMessage `json:"_source"`
 }
 
-// ToDomain converts this instance of a [Hit] into an [opensearchtools.Hit].
-func (h Hit) ToDomain() opensearchtools.Hit {
+// toDomain converts this instance of a [Hit] into an [opensearchtools.Hit].
+func (h Hit) toDomain() opensearchtools.Hit {
 	return opensearchtools.Hit{
 		Index:  h.Index,
 		ID:     h.ID,

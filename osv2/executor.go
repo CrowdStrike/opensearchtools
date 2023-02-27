@@ -47,18 +47,24 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 // An error can be returned if:
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
-func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchRequest) (*opensearchtools.SearchResponse, error) {
-	specRequest, specErr := FromDomainSearchRequest(req)
+func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchRequest) (*opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse], error) {
+	osv2Req, specErr := fromDomainSearchRequest(req)
 	if specErr != nil {
 		return nil, specErr
 	}
 
-	specResponse, err := specRequest.Do(ctx, e.Client)
+	osv2Resp, err := osv2Req.Do(ctx, e.Client)
 
 	if err != nil {
 		return nil, err
 	}
 
-	modelResponse := specResponse.ToDomain()
-	return &modelResponse, err
+	domainResp := osv2Resp.Response.ToDomain()
+
+	return &opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse]{
+		ValidationResults: osv2Resp.ValidationResults,
+		StatusCode:        osv2Resp.StatusCode,
+		Header:            osv2Resp.Header,
+		Response:          &domainResp,
+	}, err
 }
