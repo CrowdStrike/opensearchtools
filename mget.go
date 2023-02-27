@@ -19,7 +19,7 @@ type MGet interface {
 //   - OpenSearch 2
 //
 // This MGetRequest is intended to be used along with a version-specific executor such as
-// [opensearchtools.osv2.Executor]. For example:
+// [opensearchtools/osv2.Executor]. For example:
 //
 //	mgetReq := NewMGetRequest().
 //		Add("example_index", "example_id")

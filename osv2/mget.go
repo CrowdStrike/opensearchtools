@@ -153,12 +153,12 @@ type MGetResponse struct {
 	Docs       []MGetResult `json:"docs,omitempty"`
 }
 
-// ToDomain converts this instance of an [MGetResponse] along with the given [opensearchtools.ValidationResults]
+// toDomain converts this instance of an [MGetResponse] along with the given [opensearchtools.ValidationResults]
 // into an [opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]].
-func (r *MGetResponse) ToDomain(vrs opensearchtools.ValidationResults) *opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse] {
+func (r *MGetResponse) toDomain(vrs opensearchtools.ValidationResults) *opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse] {
 	modelDocs := make([]opensearchtools.MGetResult, len(r.Docs))
 	for i, d := range r.Docs {
-		modelDoc := d.ToDomain()
+		modelDoc := d.toDomain()
 		modelDocs[i] = modelDoc
 	}
 
@@ -188,8 +188,8 @@ type MGetResult struct {
 	Error       error           `json:"-"`
 }
 
-// ToDomain converts this instance of an [MGetResult] into an [opensearchtools.MGetResult].
-func (r *MGetResult) ToDomain() opensearchtools.MGetResult {
+// toDomain converts this instance of an [MGetResult] into an [opensearchtools.MGetResult].
+func (r *MGetResult) toDomain() opensearchtools.MGetResult {
 	return opensearchtools.MGetResult{
 		Index:       r.Index,
 		ID:          r.ID,
