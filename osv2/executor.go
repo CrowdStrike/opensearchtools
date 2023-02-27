@@ -39,5 +39,5 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 		return nil, err
 	}
 
-	return osv2Resp.ToDomain(validationRes), err
+	return osv2Resp.toDomain(validationRes), err
 }

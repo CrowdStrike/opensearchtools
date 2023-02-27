@@ -141,7 +141,7 @@ func TestMGetRequest_MarshalJSON(t *testing.T) {
 	}
 }
 
-func Test_MGetResult_ToDomain(t *testing.T) {
+func Test_MGetResult_toDomain(t *testing.T) {
 	tests := []struct {
 		name              string
 		marshalableResult MGetResult
@@ -183,13 +183,13 @@ func Test_MGetResult_ToDomain(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.marshalableResult.ToDomain()
+			got := tt.marshalableResult.toDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_MGetResponse_ToDomain(t *testing.T) {
+func Test_MGetResponse_toDomain(t *testing.T) {
 	testHeaders := http.Header{}
 	testHeaders.Add("x-foo", "bar")
 
@@ -298,7 +298,7 @@ func Test_MGetResponse_ToDomain(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.marshlableResponse.ToDomain(vrs)
+			got := tt.marshlableResponse.toDomain(vrs)
 			require.Equal(t, tt.want, got)
 		})
 	}
