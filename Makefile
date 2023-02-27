@@ -6,6 +6,7 @@ lint:
 .PHONY: format
 format: 
 	@echo "Formatting..."
+	@goimports -w -local github.com/CrowdStrike .
 	@gofmt -w -l -e .
 
 .PHONY: test
