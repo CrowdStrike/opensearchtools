@@ -127,6 +127,12 @@ func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (sr SearchReque
 	}, nil
 }
 
+// Validate validates the given SearchRequest
+func (m *SearchRequest) Validate() opensearchtools.ValidationResults {
+	var validationResults opensearchtools.ValidationResults
+	return validationResults
+}
+
 // Do executes the SearchRequest using the provided [opensearch.Client].
 // If the request is executed successfully, then a SearchResponse will be returned.
 // An error can be returned if

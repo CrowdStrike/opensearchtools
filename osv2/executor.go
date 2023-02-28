@@ -58,13 +58,18 @@ func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchReques
 		return resp, err
 	}
 
+	validationRes := osv2Req.Validate()
+	if validationRes.IsFatal() {
+		return resp, opensearchtools.NewValidationError(validationRes)
+	}
+
 	osv2Resp, err := osv2Req.Do(ctx, e.Client)
 	if err != nil {
 		return resp, err
 	}
 
 	return opensearchtools.NewOpenSearchResponse(
-		osv2Resp.ValidationResults,
+		validationRes,
 		osv2Resp.StatusCode,
 		osv2Resp.Header,
 		osv2Resp.Response.ToDomain(),
