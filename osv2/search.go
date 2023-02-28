@@ -112,14 +112,14 @@ func (r *SearchRequest) WithQuery(q opensearchtools.Query) *SearchRequest {
 	return r
 }
 
-// fromDomainSearchRequest creates a new SearchRequest from the give [opensearchtools.SearchRequest]
-func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (*SearchRequest, error) {
-	convertedQuery, queryErr := V2QueryConverter(req.Query)
-	if queryErr != nil {
-		return nil, queryErr
+// fromDomainSearchRequest creates a new SearchRequest from the given [opensearchtools.SearchRequest]
+func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (sr SearchRequest, err error) {
+	convertedQuery, err := V2QueryConverter(req.Query)
+	if err != nil {
+		return sr, err
 	}
 
-	return &SearchRequest{
+	return SearchRequest{
 		Query: convertedQuery,
 		Index: req.Index,
 		Size:  req.Size,
@@ -165,7 +165,7 @@ func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*ope
 		ValidationResults: nil,
 		StatusCode:        osResp.StatusCode,
 		Header:            osResp.Header,
-		Response:          &resp,
+		Response:          resp,
 	}, nil
 }
 

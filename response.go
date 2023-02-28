@@ -8,5 +8,14 @@ type OpenSearchResponse[T any] struct {
 	ValidationResults ValidationResults
 	StatusCode        int
 	Header            http.Header
-	Response          *T
+	Response          T
+}
+
+func NewOpenSearchResponse[T any](vrs ValidationResults, statusCode int, header http.Header, response T) OpenSearchResponse[T] {
+	return OpenSearchResponse[T]{
+		ValidationResults: vrs,
+		StatusCode:        statusCode,
+		Header:            header,
+		Response:          response,
+	}
 }

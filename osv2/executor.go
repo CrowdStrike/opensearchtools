@@ -26,45 +26,47 @@ func NewExecutor(client *opensearch.Client) *Executor {
 // will be returned.
 // An error can be returned if:
 //   - The request to OpenSearch fails
-//   - The results json cannot be unmarshalled
-func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (*opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse], error) {
+//   - The results JSON cannot be unmarshalled
+func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse], err error) {
 	osv2Req := fromDomainMGetRequest(req)
 	validationRes := osv2Req.Validate()
 	if validationRes.IsFatal() {
-		return nil, opensearchtools.NewValidationError(validationRes)
+		return resp, opensearchtools.NewValidationError(validationRes)
 	}
 
 	osv2Resp, err := osv2Req.Do(ctx, e.Client)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
-	return osv2Resp.toDomain(validationRes), err
+	return opensearchtools.NewOpenSearchResponse(
+		validationRes,
+		osv2Resp.StatusCode,
+		osv2Resp.Header,
+		osv2Resp.toDomain(),
+	), nil
 }
 
 // Search executes the SearchRequest using the provided [opensearchtools.SearchRequest].
 // If the request is executed successfully, then an [opensearchtools.SearchResponse] will be returned.
 // An error can be returned if:
 //   - The request to OpenSearch fails
-//   - The results json cannot be unmarshalled
-func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchRequest) (*opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse], error) {
-	osv2Req, specErr := fromDomainSearchRequest(req)
-	if specErr != nil {
-		return nil, specErr
+//   - The results JSON cannot be unmarshalled
+func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse], err error) {
+	osv2Req, err := fromDomainSearchRequest(req)
+	if err != nil {
+		return resp, err
 	}
 
 	osv2Resp, err := osv2Req.Do(ctx, e.Client)
-
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
-	domainResp := osv2Resp.Response.ToDomain()
-
-	return &opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse]{
-		ValidationResults: osv2Resp.ValidationResults,
-		StatusCode:        osv2Resp.StatusCode,
-		Header:            osv2Resp.Header,
-		Response:          &domainResp,
-	}, err
+	return opensearchtools.NewOpenSearchResponse(
+		osv2Resp.ValidationResults,
+		osv2Resp.StatusCode,
+		osv2Resp.Header,
+		osv2Resp.Response.ToDomain(),
+	), nil
 }

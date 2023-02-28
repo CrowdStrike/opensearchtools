@@ -194,13 +194,13 @@ func Test_MGetResponse_toDomain(t *testing.T) {
 	testHeaders.Add("x-foo", "bar")
 
 	tests := []struct {
-		name               string
-		marshlableResponse MGetResponse
-		want               *opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]
+		name             string
+		osv2MGetResponse MGetResponse
+		want             opensearchtools.MGetResponse
 	}{
 		{
 			name: "Multiple docs returned",
-			marshlableResponse: MGetResponse{
+			osv2MGetResponse: MGetResponse{
 				StatusCode: 200,
 				Header:     testHeaders,
 				Docs: []MGetResult{
@@ -236,69 +236,57 @@ func Test_MGetResponse_toDomain(t *testing.T) {
 					},
 				},
 			},
-			want: &opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
-				ValidationResults: nil,
-				StatusCode:        200,
-				Header:            testHeaders,
-				Response: &opensearchtools.MGetResponse{
-					Docs: []opensearchtools.MGetResult{
-						{
-							Index:       testIndex1,
-							ID:          testID1,
-							Version:     42,
-							SeqNo:       99,
-							PrimaryTerm: 10,
-							Found:       true,
-							Source:      []byte(`{"name": "bob", "age": 42}`),
-							Error:       nil,
-						},
-						{
-							Index:       testIndex2,
-							ID:          testID2,
-							Version:     1,
-							SeqNo:       2,
-							PrimaryTerm: 2,
-							Found:       true,
-							Source:      []byte(`{"deviceName": "abc123", "os": "windows"}`),
-							Error:       nil,
-						},
-						{
-							Index:       testIndex2,
-							ID:          testID2,
-							Version:     10,
-							SeqNo:       220,
-							PrimaryTerm: 30,
-							Found:       false,
-							Source:      []byte{},
-							Error:       nil,
-						},
+			want: opensearchtools.MGetResponse{
+				Docs: []opensearchtools.MGetResult{
+					{
+						Index:       testIndex1,
+						ID:          testID1,
+						Version:     42,
+						SeqNo:       99,
+						PrimaryTerm: 10,
+						Found:       true,
+						Source:      []byte(`{"name": "bob", "age": 42}`),
+						Error:       nil,
+					},
+					{
+						Index:       testIndex2,
+						ID:          testID2,
+						Version:     1,
+						SeqNo:       2,
+						PrimaryTerm: 2,
+						Found:       true,
+						Source:      []byte(`{"deviceName": "abc123", "os": "windows"}`),
+						Error:       nil,
+					},
+					{
+						Index:       testIndex2,
+						ID:          testID2,
+						Version:     10,
+						SeqNo:       220,
+						PrimaryTerm: 30,
+						Found:       false,
+						Source:      []byte{},
+						Error:       nil,
 					},
 				},
 			},
 		},
 		{
 			name: "No docs returned",
-			marshlableResponse: MGetResponse{
+			osv2MGetResponse: MGetResponse{
 				StatusCode: 200,
 				Header:     testHeaders,
 				Docs:       []MGetResult{},
 			},
-			want: &opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
-				ValidationResults: nil,
-				StatusCode:        200,
-				Header:            testHeaders,
-				Response: &opensearchtools.MGetResponse{
-					Docs: []opensearchtools.MGetResult{},
-				},
+			want: opensearchtools.MGetResponse{
+				Docs: []opensearchtools.MGetResult{},
 			},
 		},
 	}
 
-	var vrs opensearchtools.ValidationResults
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.marshlableResponse.toDomain(vrs)
+			got := tt.osv2MGetResponse.toDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}

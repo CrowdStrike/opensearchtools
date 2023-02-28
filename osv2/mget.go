@@ -153,27 +153,17 @@ type MGetResponse struct {
 	Docs       []MGetResult `json:"docs,omitempty"`
 }
 
-// toDomain converts this instance of an [MGetResponse] along with the given [opensearchtools.ValidationResults]
-// into an [opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]].
-func (r *MGetResponse) toDomain(vrs opensearchtools.ValidationResults) *opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse] {
+// toDomain converts this instance of an [MGetResponse] to an [opensearchtools.MGetResponse]
+func (r *MGetResponse) toDomain() opensearchtools.MGetResponse {
 	modelDocs := make([]opensearchtools.MGetResult, len(r.Docs))
 	for i, d := range r.Docs {
 		modelDoc := d.toDomain()
 		modelDocs[i] = modelDoc
 	}
 
-	domainMGetResponse := opensearchtools.MGetResponse{
+	return opensearchtools.MGetResponse{
 		Docs: modelDocs,
 	}
-
-	resp := opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
-		ValidationResults: vrs,
-		StatusCode:        r.StatusCode,
-		Header:            r.Header,
-		Response:          &domainMGetResponse,
-	}
-
-	return &resp
 }
 
 // mgetResult is the individual result for each requested item.
