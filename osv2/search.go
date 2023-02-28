@@ -127,7 +127,7 @@ func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (*SearchRequest
 	}, nil
 }
 
-// Do executes the SearchRequest using the provided opensearchtools.Client.
+// Do executes the SearchRequest using the provided [opensearch.Client].
 // If the request is executed successfully, then a SearchResponse will be returned.
 // An error can be returned if
 //
