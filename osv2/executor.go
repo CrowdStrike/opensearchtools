@@ -43,7 +43,7 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 		validationRes,
 		osv2Resp.StatusCode,
 		osv2Resp.Header,
-		osv2Resp.toDomain(),
+		osv2Resp.Response.toDomain(),
 	), nil
 }
 

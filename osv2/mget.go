@@ -63,7 +63,7 @@ func (m *MGetRequest) AddDocs(docs ...opensearchtools.RoutableDoc) *MGetRequest 
 //
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
-func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*MGetResponse, error) {
+func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.RawOpenSearchResponse[MGetResponse], error) {
 	bodyBytes, jErr := json.Marshal(m)
 	if jErr != nil {
 		return nil, jErr
@@ -78,21 +78,22 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*MGetR
 		return nil, rErr
 	}
 
-	resp := &MGetResponse{
-		StatusCode: osResp.StatusCode,
-		Header:     osResp.Header,
-	}
-
 	var respBuf bytes.Buffer
 	if _, err := respBuf.ReadFrom(osResp.Body); err != nil {
 		return nil, err
 	}
 
-	if err := json.Unmarshal(respBuf.Bytes(), &resp); err != nil {
+	var mgetResp MGetResponse
+	if err := json.Unmarshal(respBuf.Bytes(), &mgetResp); err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	resp := opensearchtools.NewRawOpenSearchResponse(
+		osResp.StatusCode,
+		osResp.Header,
+		mgetResp,
+	)
+	return &resp, nil
 }
 
 // fromDomainMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest].

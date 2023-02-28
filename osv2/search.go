@@ -141,7 +141,7 @@ func (m *SearchRequest) Validate() opensearchtools.ValidationResults {
 //   - The source fails to be marshaled to JSON
 //   - The OpenSearch request fails to executed
 //   - The OpenSearch response cannot be parsed
-func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.OpenSearchResponse[SearchResponse], error) {
+func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.RawOpenSearchResponse[SearchResponse], error) {
 	bodyBytes, jErr := r.ToOpenSearchJSON()
 	if jErr != nil {
 		return nil, jErr
@@ -161,18 +161,17 @@ func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*ope
 		return nil, err
 	}
 
-	var resp SearchResponse
-
-	if err := json.Unmarshal(respBuf.Bytes(), &resp); err != nil {
+	var searchResp SearchResponse
+	if err := json.Unmarshal(respBuf.Bytes(), &searchResp); err != nil {
 		return nil, err
 	}
 
-	return &opensearchtools.OpenSearchResponse[SearchResponse]{
-		ValidationResults: nil,
-		StatusCode:        osResp.StatusCode,
-		Header:            osResp.Header,
-		Response:          resp,
-	}, nil
+	resp := opensearchtools.NewRawOpenSearchResponse(
+		osResp.StatusCode,
+		osResp.Header,
+		searchResp,
+	)
+	return &resp, nil
 }
 
 // SearchResponse wraps the functionality of [opensearchapi.Response] by supporting request parsing.
