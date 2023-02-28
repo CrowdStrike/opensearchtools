@@ -128,7 +128,7 @@ func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (sr SearchReque
 }
 
 // Validate validates the given SearchRequest
-func (m *SearchRequest) Validate() opensearchtools.ValidationResults {
+func (r *SearchRequest) Validate() opensearchtools.ValidationResults {
 	var validationResults opensearchtools.ValidationResults
 	return validationResults
 }
