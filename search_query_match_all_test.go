@@ -1,4 +1,4 @@
-package search
+package opensearchtools
 
 import (
 	"testing"
@@ -6,23 +6,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRegexQuery_ToOpenSearchJSON(t *testing.T) {
+func TestMatchAllQuery_ToOpenSearchJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		query   *RegexQuery
+		query   *MatchAllQuery
 		want    string
 		wantErr bool
 	}{
 		{
-			name:    "Empty Query",
-			query:   &RegexQuery{},
-			want:    `{"regexp":{"":""}}`,
-			wantErr: false,
-		},
-		{
 			name:    "Basic Constructor",
-			query:   NewRegexQuery("field", "^value$"),
-			want:    `{"regexp":{"field":"^value$"}}`,
+			query:   NewMatchAllQuery(),
+			want:    `{"match_all":{}}`,
 			wantErr: false,
 		},
 	}

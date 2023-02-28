@@ -1,4 +1,4 @@
-package search
+package opensearchtools
 
 import (
 	"testing"
@@ -9,13 +9,13 @@ import (
 func TestSort_ToOpenSearchJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		sort    *Sort
+		sort    Sort
 		want    string
 		wantErr bool
 	}{
 		{
 			name:    "Empty sort",
-			sort:    &Sort{},
+			sort:    Sort{},
 			want:    `{"":{"order":"asc"}}`,
 			wantErr: false,
 		},

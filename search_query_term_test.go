@@ -1,4 +1,4 @@
-package search
+package opensearchtools
 
 import (
 	"testing"
@@ -6,35 +6,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMatchQuery_ToOpenSearchJSON(t *testing.T) {
+func TestTermQuery_ToOpenSearchJSON(t *testing.T) {
 	tests := []struct {
 		name    string
-		query   *MatchQuery
+		query   *TermQuery
 		want    string
 		wantErr bool
 	}{
 		{
 			name:    "Empty Query",
-			query:   &MatchQuery{},
-			want:    `{"match":{"":{"query":"","operator":""}}}`,
+			query:   &TermQuery{},
+			want:    `{"term":{"":null}}`,
 			wantErr: false,
 		},
 		{
 			name:    "Simple Success",
-			query:   NewMatchQuery("field", "value"),
-			want:    `{"match":{"field":{"query":"value","operator":"or"}}}`,
+			query:   NewTermQuery("field", "value"),
+			want:    `{"term":{"field":"value"}}`,
 			wantErr: false,
 		},
 		{
-			name:    "No value",
-			query:   NewMatchQuery("field", ""),
-			want:    `{"match":{"field":{"query":"","operator":"or"}}}`,
+			name:    "Search for empty value",
+			query:   NewTermQuery("field", ""),
+			want:    `{"term":{"field":""}}`,
 			wantErr: false,
 		},
 		{
-			name:    "Different operator",
-			query:   NewMatchQuery("field", "value").SetOperator("and"),
-			want:    `{"match":{"field":{"query":"value","operator":"and"}}}`,
+			name:    "Search for empty field and value",
+			query:   NewTermQuery("", ""),
+			want:    `{"term":{"":""}}`,
 			wantErr: false,
 		},
 	}
