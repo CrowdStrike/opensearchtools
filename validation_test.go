@@ -163,6 +163,23 @@ func Test_ValidationResults_Add(t *testing.T) {
 	)
 }
 
+func Test_ValidationResults_Add_WithLiteralInstantiation(t *testing.T) {
+	vrs := ValidationResults{}
+	vrs.Add(NewValidationResult("m1", false))
+	require.Equal(
+		t,
+		ValidationResultsFromSlice([]ValidationResult{
+			{
+				Message: "m1",
+				Fatal:   false,
+			},
+		}),
+		vrs,
+		"ValidationResult not added",
+	)
+	vrs.Add(NewValidationResult("m2", true))
+}
+
 func Test_ValidationResults_Extend(t *testing.T) {
 	vrs1 := ValidationResultsFromSlice([]ValidationResult{
 		{
@@ -210,5 +227,28 @@ func Test_ValidationResults_Extend(t *testing.T) {
 		}),
 		vrs1,
 		"validation results not extended",
+	)
+}
+
+func Test_ValidationResults_Extend_WithLiteralInstantiation(t *testing.T) {
+	vrs1 := ValidationResults{}
+	vrs2 := ValidationResultsFromSlice([]ValidationResult{
+		{
+			Message: "m1",
+			Fatal:   false,
+		},
+	})
+	vrs1.Extend(vrs2)
+
+	require.Equal(
+		t,
+		ValidationResultsFromSlice([]ValidationResult{
+			{
+				Message: "m1",
+				Fatal:   false,
+			},
+		}),
+		vrs1,
+		"ValidationResults not extended when initialized with literal init",
 	)
 }

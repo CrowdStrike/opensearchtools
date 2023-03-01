@@ -53,11 +53,17 @@ func (vrs *ValidationResults) IsFatal() bool {
 
 // Add either adds the given [ValidationResult] to the set or does not if it already exists in the set
 func (vrs *ValidationResults) Add(vr ValidationResult) {
+	if vrs.validationResults == nil {
+		vrs.validationResults = map[ValidationResult]struct{}{}
+	}
 	vrs.validationResults[vr] = struct{}{}
 }
 
 // Add either adds the given [ValidationResult] to the set or does not if it already exists in the set
 func (vrs *ValidationResults) Extend(other ValidationResults) {
+	if vrs.validationResults == nil {
+		vrs.validationResults = map[ValidationResult]struct{}{}
+	}
 	for k := range other.validationResults {
 		vrs.Add(k)
 	}
@@ -69,9 +75,9 @@ type ValidationError struct {
 }
 
 // NewValidationError creates a new ValidationError instance with the given ValidationResults
-func NewValidationError(rs ValidationResults) *ValidationError {
+func NewValidationError(vrs ValidationResults) *ValidationError {
 	return &ValidationError{
-		ValidationResults: rs,
+		ValidationResults: vrs,
 	}
 }
 
