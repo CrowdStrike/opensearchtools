@@ -16,10 +16,6 @@ type ValidationResult struct {
 	Fatal   bool
 }
 
-// ValidationResults is a slice of ValidationResult. It is defined as its own type for convenience and to be able
-// to have methods on it.
-type ValidationResults []ValidationResult
-
 // NewValidationResult creates a new ValidationResult instance with the given message and fatal params.
 func NewValidationResult(message string, fatal bool) ValidationResult {
 	return ValidationResult{
@@ -28,19 +24,49 @@ func NewValidationResult(message string, fatal bool) ValidationResult {
 	}
 }
 
+// A collection of ValidationResults that implements set logic, meaning it holds unique entries only (no duplicates)
+type ValidationResults struct {
+	validationResults map[ValidationResult]struct{}
+}
+
+// NewValidationResults creates a new ValidationResults instance
+func NewValidationResults() ValidationResults {
+	return ValidationResults{
+		validationResults: map[ValidationResult]struct{}{},
+	}
+}
+
 // IsFatal returns true if there is one or more [ValidationResult] that is fatal.
-func (v ValidationResults) IsFatal() bool {
-	if len(v) == 0 {
+func (vrs *ValidationResults) IsFatal() bool {
+	if len(vrs.validationResults) == 0 {
 		return false
 	}
 
-	for _, vr := range v {
-		if vr.Fatal {
+	for k := range vrs.validationResults {
+		if k.Fatal {
 			return true
 		}
 	}
 
 	return false
+}
+
+// Add either adds the given [ValidationResult] to the set or does not if it already exists in the set
+func (vrs *ValidationResults) Add(vr ValidationResult) {
+	if vrs.validationResults == nil {
+		vrs.validationResults = map[ValidationResult]struct{}{}
+	}
+	vrs.validationResults[vr] = struct{}{}
+}
+
+// Add either adds the given [ValidationResult] to the set or does not if it already exists in the set
+func (vrs *ValidationResults) Extend(other ValidationResults) {
+	if vrs.validationResults == nil {
+		vrs.validationResults = map[ValidationResult]struct{}{}
+	}
+	for k := range other.validationResults {
+		vrs.Add(k)
+	}
 }
 
 // ValidationError is an error which contains ValidationResults
@@ -49,27 +75,36 @@ type ValidationError struct {
 }
 
 // NewValidationError creates a new ValidationError instance with the given ValidationResults
-func NewValidationError(rs ValidationResults) *ValidationError {
+func NewValidationError(vrs ValidationResults) *ValidationError {
 	return &ValidationError{
-		ValidationResults: rs,
+		ValidationResults: vrs,
 	}
 }
 
 // Error returns a newline-separated string representation of all validation results or an empty string if there are none.
 // Fatal results are prefixed with `fatal:`.
 func (e *ValidationError) Error() string {
-	if len(e.ValidationResults) == 0 {
+	if len(e.ValidationResults.validationResults) == 0 {
 		return ""
 	}
 
 	var b strings.Builder
 	fmt.Fprintln(&b, "One or more validations failed:")
-	for _, v := range e.ValidationResults {
-		if v.Fatal {
-			fmt.Fprintf(&b, "fatal: %s\n", v.Message)
+	for vr := range e.ValidationResults.validationResults {
+		if vr.Fatal {
+			fmt.Fprintf(&b, "fatal: %s\n", vr.Message)
 		} else {
-			fmt.Fprintln(&b, v.Message)
+			fmt.Fprintln(&b, vr.Message)
 		}
 	}
 	return b.String()
+}
+
+// ValidationResultsFromSlice creates a ValidationResults from the given slice of [ValidationResult]
+func ValidationResultsFromSlice(vrs []ValidationResult) ValidationResults {
+	validationResults := NewValidationResults()
+	for _, vr := range vrs {
+		validationResults.Add(vr)
+	}
+	return validationResults
 }

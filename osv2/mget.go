@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/opensearch-project/opensearch-go/v2"
 	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
@@ -63,7 +62,12 @@ func (m *MGetRequest) AddDocs(docs ...opensearchtools.RoutableDoc) *MGetRequest 
 //
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
-func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*MGetResponse, error) {
+func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.OpenSearchResponse[MGetResponse], error) {
+	vrs := m.validate()
+	if vrs.IsFatal() {
+		return nil, opensearchtools.NewValidationError(vrs)
+	}
+
 	bodyBytes, jErr := json.Marshal(m)
 	if jErr != nil {
 		return nil, jErr
@@ -78,45 +82,47 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*MGetR
 		return nil, rErr
 	}
 
-	resp := &MGetResponse{
-		StatusCode: osResp.StatusCode,
-		Header:     osResp.Header,
-	}
-
 	var respBuf bytes.Buffer
 	if _, err := respBuf.ReadFrom(osResp.Body); err != nil {
 		return nil, err
 	}
 
-	if err := json.Unmarshal(respBuf.Bytes(), &resp); err != nil {
+	var mgetResp MGetResponse
+	if err := json.Unmarshal(respBuf.Bytes(), &mgetResp); err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	resp := opensearchtools.NewOpenSearchResponse(
+		vrs,
+		osResp.StatusCode,
+		osResp.Header,
+		mgetResp,
+	)
+	return &resp, nil
 }
 
 // fromDomainMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest].
-func fromDomainMGetRequest(req *opensearchtools.MGetRequest) MGetRequest {
+func fromDomainMGetRequest(req *opensearchtools.MGetRequest) (MGetRequest, opensearchtools.ValidationResults) {
 	return MGetRequest{
 		Index: req.Index,
 		Docs:  req.Docs,
-	}
+	}, opensearchtools.NewValidationResults()
 }
 
-// Validate validates the given MGetRequest
-func (m *MGetRequest) Validate() opensearchtools.ValidationResults {
-	var validationResults opensearchtools.ValidationResults
+// validate validates the given MGetRequest
+func (m *MGetRequest) validate() opensearchtools.ValidationResults {
+	validationResults := opensearchtools.NewValidationResults()
 
 	topLevelIndexIsEmpty := m.Index == ""
 	for _, d := range m.Docs {
 		// ensure Index is either set at the top level or set in each of the Docs
 		if topLevelIndexIsEmpty && d.Index() == "" {
-			validationResults = append(validationResults, opensearchtools.NewValidationResult(fmt.Sprintf("Index not set at the MGetRequest level nor in the Doc with ID %s", d.ID()), true))
+			validationResults.Add(opensearchtools.NewValidationResult(fmt.Sprintf("Index not set at the MGetRequest level nor in the Doc with ID %s", d.ID()), true))
 		}
 
 		// ensure that ID() is non-empty for each Doc
 		if d.ID() == "" {
-			validationResults = append(validationResults, opensearchtools.NewValidationResult("Doc ID is empty", true))
+			validationResults.Add(opensearchtools.NewValidationResult("Doc ID is empty", true))
 		}
 	}
 
@@ -148,32 +154,20 @@ func (m *MGetRequest) MarshalJSON() ([]byte, error) {
 // MGetResponse is an OpenSearch 2 specific struct corresponding to opensearchapi.Response and [opensearchtools.MGetResponse].
 // It holds a slice of mgetResults.
 type MGetResponse struct {
-	StatusCode int          `json:"-"`
-	Header     http.Header  `json:"-"`
-	Docs       []MGetResult `json:"docs,omitempty"`
+	Docs []MGetResult `json:"docs,omitempty"`
 }
 
-// toDomain converts this instance of an [MGetResponse] along with the given [opensearchtools.ValidationResults]
-// into an [opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]].
-func (r *MGetResponse) toDomain(vrs opensearchtools.ValidationResults) *opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse] {
+// toDomain converts this instance of an [MGetResponse] to an [opensearchtools.MGetResponse]
+func (r *MGetResponse) toDomain() opensearchtools.MGetResponse {
 	modelDocs := make([]opensearchtools.MGetResult, len(r.Docs))
 	for i, d := range r.Docs {
 		modelDoc := d.toDomain()
 		modelDocs[i] = modelDoc
 	}
 
-	domainMGetResponse := opensearchtools.MGetResponse{
+	return opensearchtools.MGetResponse{
 		Docs: modelDocs,
 	}
-
-	resp := opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
-		ValidationResults: vrs,
-		StatusCode:        r.StatusCode,
-		Header:            r.Header,
-		Response:          &domainMGetResponse,
-	}
-
-	return &resp
 }
 
 // mgetResult is the individual result for each requested item.

@@ -25,46 +25,59 @@ func NewExecutor(client *opensearch.Client) *Executor {
 // If the request is executed successfully, then an [opensearchtools.MGetResponse] with [opensearchtools.MGetResults]
 // will be returned.
 // An error can be returned if:
+//   - Fatal validation issues are found
 //   - The request to OpenSearch fails
-//   - The results json cannot be unmarshalled
-func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (*opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse], error) {
-	osv2Req := fromDomainMGetRequest(req)
-	validationRes := osv2Req.Validate()
-	if validationRes.IsFatal() {
-		return nil, opensearchtools.NewValidationError(validationRes)
+//   - The results JSON cannot be unmarshalled
+func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse], err error) {
+	validationResults := opensearchtools.NewValidationResults()
+
+	osv2Req, vrs := fromDomainMGetRequest(req)
+	if vrs.IsFatal() {
+		resp.ValidationResults.Extend(vrs)
+		return resp, opensearchtools.NewValidationError(vrs)
 	}
+	validationResults.Extend(vrs)
 
 	osv2Resp, err := osv2Req.Do(ctx, e.Client)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
+	validationResults.Extend(osv2Resp.ValidationResults)
 
-	return osv2Resp.toDomain(validationRes), err
+	return opensearchtools.NewOpenSearchResponse(
+		validationResults,
+		osv2Resp.StatusCode,
+		osv2Resp.Header,
+		osv2Resp.Response.toDomain(),
+	), nil
 }
 
 // Search executes the SearchRequest using the provided [opensearchtools.SearchRequest].
 // If the request is executed successfully, then an [opensearchtools.SearchResponse] will be returned.
 // An error can be returned if:
+//   - Fatal validation issues are found
 //   - The request to OpenSearch fails
-//   - The results json cannot be unmarshalled
-func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchRequest) (*opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse], error) {
-	osv2Req, specErr := fromDomainSearchRequest(req)
-	if specErr != nil {
-		return nil, specErr
+//   - The results JSON cannot be unmarshalled
+func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse], err error) {
+	var validationResults opensearchtools.ValidationResults
+
+	osv2Req, vrs := fromDomainSearchRequest(req)
+	if vrs.IsFatal() {
+		resp.ValidationResults.Extend(vrs)
+		return resp, opensearchtools.NewValidationError(vrs)
 	}
+	validationResults.Extend(vrs)
 
 	osv2Resp, err := osv2Req.Do(ctx, e.Client)
-
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
+	validationResults.Extend(osv2Resp.ValidationResults)
 
-	domainResp := osv2Resp.Response.ToDomain()
-
-	return &opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse]{
-		ValidationResults: osv2Resp.ValidationResults,
-		StatusCode:        osv2Resp.StatusCode,
-		Header:            osv2Resp.Header,
-		Response:          &domainResp,
-	}, err
+	return opensearchtools.NewOpenSearchResponse(
+		validationResults,
+		osv2Resp.StatusCode,
+		osv2Resp.Header,
+		osv2Resp.Response.ToDomain(),
+	), nil
 }

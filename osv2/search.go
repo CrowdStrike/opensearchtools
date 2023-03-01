@@ -112,19 +112,29 @@ func (r *SearchRequest) WithQuery(q opensearchtools.Query) *SearchRequest {
 	return r
 }
 
-// fromDomainSearchRequest creates a new SearchRequest from the give [opensearchtools.SearchRequest]
-func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (*SearchRequest, error) {
-	convertedQuery, queryErr := V2QueryConverter(req.Query)
-	if queryErr != nil {
-		return nil, queryErr
+// fromDomainSearchRequest creates a new SearchRequest from the given [opensearchtools.SearchRequest]
+func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest, opensearchtools.ValidationResults) {
+	vrs := opensearchtools.NewValidationResults()
+	var searchRequest SearchRequest
+
+	convertedQuery, err := V2QueryConverter(req.Query)
+	if err != nil {
+		vrs.Add(opensearchtools.NewValidationResult(err.Error(), true))
+		return searchRequest, vrs
 	}
 
-	return &SearchRequest{
+	return SearchRequest{
 		Query: convertedQuery,
 		Index: req.Index,
 		Size:  req.Size,
 		Sort:  req.Sort,
-	}, nil
+	}, vrs
+}
+
+// Validate validates the given SearchRequest
+func (r *SearchRequest) Validate() opensearchtools.ValidationResults {
+	var validationResults opensearchtools.ValidationResults
+	return validationResults
 }
 
 // Do executes the SearchRequest using the provided [opensearch.Client].
@@ -155,18 +165,18 @@ func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*ope
 		return nil, err
 	}
 
-	var resp SearchResponse
-
-	if err := json.Unmarshal(respBuf.Bytes(), &resp); err != nil {
+	var searchResp SearchResponse
+	if err := json.Unmarshal(respBuf.Bytes(), &searchResp); err != nil {
 		return nil, err
 	}
 
-	return &opensearchtools.OpenSearchResponse[SearchResponse]{
-		ValidationResults: nil,
-		StatusCode:        osResp.StatusCode,
-		Header:            osResp.Header,
-		Response:          &resp,
-	}, nil
+	resp := opensearchtools.NewOpenSearchResponse(
+		opensearchtools.NewValidationResults(), // no additional validation
+		osResp.StatusCode,
+		osResp.Header,
+		searchResp,
+	)
+	return &resp, nil
 }
 
 // SearchResponse wraps the functionality of [opensearchapi.Response] by supporting request parsing.

@@ -2,7 +2,6 @@ package osv2
 
 import (
 	"fmt"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -190,19 +189,14 @@ func Test_MGetResult_toDomain(t *testing.T) {
 }
 
 func Test_MGetResponse_toDomain(t *testing.T) {
-	testHeaders := http.Header{}
-	testHeaders.Add("x-foo", "bar")
-
 	tests := []struct {
-		name               string
-		marshlableResponse MGetResponse
-		want               *opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]
+		name             string
+		osv2MGetResponse MGetResponse
+		want             opensearchtools.MGetResponse
 	}{
 		{
 			name: "Multiple docs returned",
-			marshlableResponse: MGetResponse{
-				StatusCode: 200,
-				Header:     testHeaders,
+			osv2MGetResponse: MGetResponse{
 				Docs: []MGetResult{
 					{
 						Index:       testIndex1,
@@ -236,75 +230,61 @@ func Test_MGetResponse_toDomain(t *testing.T) {
 					},
 				},
 			},
-			want: &opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
-				ValidationResults: nil,
-				StatusCode:        200,
-				Header:            testHeaders,
-				Response: &opensearchtools.MGetResponse{
-					Docs: []opensearchtools.MGetResult{
-						{
-							Index:       testIndex1,
-							ID:          testID1,
-							Version:     42,
-							SeqNo:       99,
-							PrimaryTerm: 10,
-							Found:       true,
-							Source:      []byte(`{"name": "bob", "age": 42}`),
-							Error:       nil,
-						},
-						{
-							Index:       testIndex2,
-							ID:          testID2,
-							Version:     1,
-							SeqNo:       2,
-							PrimaryTerm: 2,
-							Found:       true,
-							Source:      []byte(`{"deviceName": "abc123", "os": "windows"}`),
-							Error:       nil,
-						},
-						{
-							Index:       testIndex2,
-							ID:          testID2,
-							Version:     10,
-							SeqNo:       220,
-							PrimaryTerm: 30,
-							Found:       false,
-							Source:      []byte{},
-							Error:       nil,
-						},
+			want: opensearchtools.MGetResponse{
+				Docs: []opensearchtools.MGetResult{
+					{
+						Index:       testIndex1,
+						ID:          testID1,
+						Version:     42,
+						SeqNo:       99,
+						PrimaryTerm: 10,
+						Found:       true,
+						Source:      []byte(`{"name": "bob", "age": 42}`),
+						Error:       nil,
+					},
+					{
+						Index:       testIndex2,
+						ID:          testID2,
+						Version:     1,
+						SeqNo:       2,
+						PrimaryTerm: 2,
+						Found:       true,
+						Source:      []byte(`{"deviceName": "abc123", "os": "windows"}`),
+						Error:       nil,
+					},
+					{
+						Index:       testIndex2,
+						ID:          testID2,
+						Version:     10,
+						SeqNo:       220,
+						PrimaryTerm: 30,
+						Found:       false,
+						Source:      []byte{},
+						Error:       nil,
 					},
 				},
 			},
 		},
 		{
 			name: "No docs returned",
-			marshlableResponse: MGetResponse{
-				StatusCode: 200,
-				Header:     testHeaders,
-				Docs:       []MGetResult{},
+			osv2MGetResponse: MGetResponse{
+				Docs: []MGetResult{},
 			},
-			want: &opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse]{
-				ValidationResults: nil,
-				StatusCode:        200,
-				Header:            testHeaders,
-				Response: &opensearchtools.MGetResponse{
-					Docs: []opensearchtools.MGetResult{},
-				},
+			want: opensearchtools.MGetResponse{
+				Docs: []opensearchtools.MGetResult{},
 			},
 		},
 	}
 
-	var vrs opensearchtools.ValidationResults
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.marshlableResponse.toDomain(vrs)
+			got := tt.osv2MGetResponse.toDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func Test_MGetRequest_Validate(t *testing.T) {
+func Test_MGetRequest_validate(t *testing.T) {
 	tests := []struct {
 		name        string
 		mgetRequest MGetRequest
@@ -318,7 +298,7 @@ func Test_MGetRequest_Validate(t *testing.T) {
 					opensearchtools.NewDocumentRef(testIndex1, testID1),
 				},
 			},
-			want: nil,
+			want: opensearchtools.NewValidationResults(),
 		},
 		{
 			name: "Doc with no ID",
@@ -328,12 +308,12 @@ func Test_MGetRequest_Validate(t *testing.T) {
 					opensearchtools.NewDocumentRef("", ""),
 				},
 			},
-			want: opensearchtools.ValidationResults{
-				opensearchtools.ValidationResult{
+			want: opensearchtools.ValidationResultsFromSlice([]opensearchtools.ValidationResult{
+				{
 					Message: "Doc ID is empty",
 					Fatal:   true,
 				},
-			},
+			}),
 		},
 		{
 			name: "missing index",
@@ -343,17 +323,17 @@ func Test_MGetRequest_Validate(t *testing.T) {
 					opensearchtools.NewDocumentRef("", testID1),
 				},
 			},
-			want: opensearchtools.ValidationResults{
-				opensearchtools.ValidationResult{
+			want: opensearchtools.ValidationResultsFromSlice([]opensearchtools.ValidationResult{
+				{
 					Message: fmt.Sprintf("Index not set at the MGetRequest level nor in the Doc with ID %s", testID1),
 					Fatal:   true,
 				},
-			},
+			}),
 		},
 	}
 
 	for _, tt := range tests {
-		v := tt.mgetRequest.Validate()
+		v := tt.mgetRequest.validate()
 		require.Equal(t, tt.want, v, "invalid validation result")
 	}
 }
