@@ -341,7 +341,7 @@ func Test_MGetRequest_Validate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		v := tt.mgetRequest.Validate()
+		v := tt.mgetRequest.validate()
 		require.Equal(t, tt.want, v, "invalid validation result")
 	}
 }

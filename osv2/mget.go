@@ -63,7 +63,12 @@ func (m *MGetRequest) AddDocs(docs ...opensearchtools.RoutableDoc) *MGetRequest 
 //
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
-func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.RawOpenSearchResponse[MGetResponse], error) {
+func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.OpenSearchResponse[MGetResponse], error) {
+	vrs := m.validate()
+	if vrs.IsFatal() {
+		return nil, opensearchtools.NewValidationError(vrs)
+	}
+
 	bodyBytes, jErr := json.Marshal(m)
 	if jErr != nil {
 		return nil, jErr
@@ -88,7 +93,8 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*opens
 		return nil, err
 	}
 
-	resp := opensearchtools.NewRawOpenSearchResponse(
+	resp := opensearchtools.NewOpenSearchResponse(
+		vrs,
 		osResp.StatusCode,
 		osResp.Header,
 		mgetResp,
@@ -97,15 +103,18 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*opens
 }
 
 // fromDomainMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest].
-func fromDomainMGetRequest(req *opensearchtools.MGetRequest) MGetRequest {
-	return MGetRequest{
-		Index: req.Index,
-		Docs:  req.Docs,
-	}
+func fromDomainMGetRequest(req *opensearchtools.MGetRequest) (opensearchtools.OpenSearchRequest[MGetRequest], error) {
+	return opensearchtools.NewOpenSearchRequest(
+		nil, // no validation done at this level for MGetRequest
+		MGetRequest{
+			Index: req.Index,
+			Docs:  req.Docs,
+		},
+	), nil
 }
 
-// Validate validates the given MGetRequest
-func (m *MGetRequest) Validate() opensearchtools.ValidationResults {
+// validate validates the given MGetRequest
+func (m *MGetRequest) validate() opensearchtools.ValidationResults {
 	var validationResults opensearchtools.ValidationResults
 
 	topLevelIndexIsEmpty := m.Index == ""

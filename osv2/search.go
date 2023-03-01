@@ -113,18 +113,23 @@ func (r *SearchRequest) WithQuery(q opensearchtools.Query) *SearchRequest {
 }
 
 // fromDomainSearchRequest creates a new SearchRequest from the given [opensearchtools.SearchRequest]
-func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (sr SearchRequest, err error) {
+func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (osReq opensearchtools.OpenSearchRequest[SearchRequest], err error) {
 	convertedQuery, err := V2QueryConverter(req.Query)
 	if err != nil {
-		return sr, err
+		return osReq, err
 	}
 
-	return SearchRequest{
-		Query: convertedQuery,
-		Index: req.Index,
-		Size:  req.Size,
-		Sort:  req.Sort,
-	}, nil
+	osReq = opensearchtools.NewOpenSearchRequest(
+		nil, // no validation done at this level for SearchRequest
+		SearchRequest{
+			Query: convertedQuery,
+			Index: req.Index,
+			Size:  req.Size,
+			Sort:  req.Sort,
+		},
+	)
+
+	return
 }
 
 // Validate validates the given SearchRequest
@@ -141,7 +146,7 @@ func (r *SearchRequest) Validate() opensearchtools.ValidationResults {
 //   - The source fails to be marshaled to JSON
 //   - The OpenSearch request fails to executed
 //   - The OpenSearch response cannot be parsed
-func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.RawOpenSearchResponse[SearchResponse], error) {
+func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.OpenSearchResponse[SearchResponse], error) {
 	bodyBytes, jErr := r.ToOpenSearchJSON()
 	if jErr != nil {
 		return nil, jErr
@@ -166,7 +171,8 @@ func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*ope
 		return nil, err
 	}
 
-	resp := opensearchtools.NewRawOpenSearchResponse(
+	resp := opensearchtools.NewOpenSearchResponse(
+		nil, // no additional validation
 		osResp.StatusCode,
 		osResp.Header,
 		searchResp,

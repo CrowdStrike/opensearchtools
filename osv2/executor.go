@@ -28,19 +28,22 @@ func NewExecutor(client *opensearch.Client) *Executor {
 //   - The request to OpenSearch fails
 //   - The results JSON cannot be unmarshalled
 func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse], err error) {
-	osv2Req := fromDomainMGetRequest(req)
-	validationRes := osv2Req.Validate()
-	if validationRes.IsFatal() {
-		return resp, opensearchtools.NewValidationError(validationRes)
-	}
+	var validationResults opensearchtools.ValidationResults
 
-	osv2Resp, err := osv2Req.Do(ctx, e.Client)
+	osv2Req, err := fromDomainMGetRequest(req)
 	if err != nil {
 		return resp, err
 	}
+	validationResults = append(validationResults, osv2Req.ValidationResults...)
+
+	osv2Resp, err := osv2Req.Request.Do(ctx, e.Client)
+	if err != nil {
+		return resp, err
+	}
+	validationResults = append(validationResults, osv2Resp.ValidationResults...)
 
 	return opensearchtools.NewOpenSearchResponse(
-		validationRes,
+		validationResults,
 		osv2Resp.StatusCode,
 		osv2Resp.Header,
 		osv2Resp.Response.toDomain(),
@@ -53,23 +56,22 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 //   - The request to OpenSearch fails
 //   - The results JSON cannot be unmarshalled
 func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse], err error) {
+	var validationResults opensearchtools.ValidationResults
+
 	osv2Req, err := fromDomainSearchRequest(req)
 	if err != nil {
 		return resp, err
 	}
+	validationResults = append(validationResults, osv2Req.ValidationResults...)
 
-	validationRes := osv2Req.Validate()
-	if validationRes.IsFatal() {
-		return resp, opensearchtools.NewValidationError(validationRes)
-	}
-
-	osv2Resp, err := osv2Req.Do(ctx, e.Client)
+	osv2Resp, err := osv2Req.Request.Do(ctx, e.Client)
 	if err != nil {
 		return resp, err
 	}
+	validationResults = append(validationResults, osv2Resp.ValidationResults...)
 
 	return opensearchtools.NewOpenSearchResponse(
-		validationRes,
+		validationResults,
 		osv2Resp.StatusCode,
 		osv2Resp.Header,
 		osv2Resp.Response.ToDomain(),
