@@ -292,7 +292,7 @@ func Test_MGetResponse_toDomain(t *testing.T) {
 	}
 }
 
-func Test_MGetRequest_Validate(t *testing.T) {
+func Test_MGetRequest_validate(t *testing.T) {
 	tests := []struct {
 		name        string
 		mgetRequest MGetRequest
@@ -306,7 +306,7 @@ func Test_MGetRequest_Validate(t *testing.T) {
 					opensearchtools.NewDocumentRef(testIndex1, testID1),
 				},
 			},
-			want: nil,
+			want: opensearchtools.NewValidationResults(),
 		},
 		{
 			name: "Doc with no ID",
@@ -316,12 +316,12 @@ func Test_MGetRequest_Validate(t *testing.T) {
 					opensearchtools.NewDocumentRef("", ""),
 				},
 			},
-			want: opensearchtools.ValidationResults{
-				opensearchtools.ValidationResult{
+			want: opensearchtools.ValidationResultsFromSlice([]opensearchtools.ValidationResult{
+				{
 					Message: "Doc ID is empty",
 					Fatal:   true,
 				},
-			},
+			}),
 		},
 		{
 			name: "missing index",
@@ -331,12 +331,12 @@ func Test_MGetRequest_Validate(t *testing.T) {
 					opensearchtools.NewDocumentRef("", testID1),
 				},
 			},
-			want: opensearchtools.ValidationResults{
-				opensearchtools.ValidationResult{
+			want: opensearchtools.ValidationResultsFromSlice([]opensearchtools.ValidationResult{
+				{
 					Message: fmt.Sprintf("Index not set at the MGetRequest level nor in the Doc with ID %s", testID1),
 					Fatal:   true,
 				},
-			},
+			}),
 		},
 	}
 

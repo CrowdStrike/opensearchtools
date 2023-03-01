@@ -20,18 +20,3 @@ func NewOpenSearchResponse[T any](vrs ValidationResults, statusCode int, header 
 		Response:          response,
 	}
 }
-
-// OpenSearchRequest is a generic request type for an OpenSearch which encapsulates the underlying
-// version-specific request and validation results.
-type OpenSearchRequest[T any] struct {
-	ValidationResults ValidationResults
-	Request           T
-}
-
-// Craete a new OpenSearchRequest instance with the given [ValidationResults] and request.
-func NewOpenSearchRequest[T any](vrs ValidationResults, request T) OpenSearchRequest[T] {
-	return OpenSearchRequest[T]{
-		ValidationResults: vrs,
-		Request:           request,
-	}
-}

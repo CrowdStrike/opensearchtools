@@ -103,30 +103,27 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*opens
 }
 
 // fromDomainMGetRequest creates a new [mgetRequest] from the given [opensearchtools.MGetRequest].
-func fromDomainMGetRequest(req *opensearchtools.MGetRequest) (opensearchtools.OpenSearchRequest[MGetRequest], error) {
-	return opensearchtools.NewOpenSearchRequest(
-		nil, // no validation done at this level for MGetRequest
-		MGetRequest{
-			Index: req.Index,
-			Docs:  req.Docs,
-		},
-	), nil
+func fromDomainMGetRequest(req *opensearchtools.MGetRequest) (MGetRequest, opensearchtools.ValidationResults) {
+	return MGetRequest{
+		Index: req.Index,
+		Docs:  req.Docs,
+	}, opensearchtools.NewValidationResults()
 }
 
 // validate validates the given MGetRequest
 func (m *MGetRequest) validate() opensearchtools.ValidationResults {
-	var validationResults opensearchtools.ValidationResults
+	validationResults := opensearchtools.NewValidationResults()
 
 	topLevelIndexIsEmpty := m.Index == ""
 	for _, d := range m.Docs {
 		// ensure Index is either set at the top level or set in each of the Docs
 		if topLevelIndexIsEmpty && d.Index() == "" {
-			validationResults = append(validationResults, opensearchtools.NewValidationResult(fmt.Sprintf("Index not set at the MGetRequest level nor in the Doc with ID %s", d.ID()), true))
+			validationResults.Add(opensearchtools.NewValidationResult(fmt.Sprintf("Index not set at the MGetRequest level nor in the Doc with ID %s", d.ID()), true))
 		}
 
 		// ensure that ID() is non-empty for each Doc
 		if d.ID() == "" {
-			validationResults = append(validationResults, opensearchtools.NewValidationResult("Doc ID is empty", true))
+			validationResults.Add(opensearchtools.NewValidationResult("Doc ID is empty", true))
 		}
 	}
 

@@ -1,6 +1,7 @@
 package opensearchtools
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,27 +15,27 @@ func Test_ValidationResults_IsFatal(t *testing.T) {
 	}{
 		{
 			name:              "empty",
-			validationResults: []ValidationResult{},
+			validationResults: NewValidationResults(),
 			want:              false,
 		},
 		{
 			name: "non-empty, no fatals",
-			validationResults: []ValidationResult{
+			validationResults: ValidationResultsFromSlice([]ValidationResult{
 				{
 					Message: "invalid field: foo",
 					Fatal:   false,
 				},
-			},
+			}),
 			want: false,
 		},
 		{
 			name: "non-empty, one fatal",
-			validationResults: []ValidationResult{
+			validationResults: ValidationResultsFromSlice([]ValidationResult{
 				{
 					Message: "invalid field: foo",
 					Fatal:   true,
 				},
-			},
+			}),
 			want: true,
 		},
 	}
@@ -54,32 +55,32 @@ func Test_ValidationResults_Error(t *testing.T) {
 	}{
 		{
 			name:              "empty",
-			validationResults: []ValidationResult{},
+			validationResults: NewValidationResults(),
 			want:              "",
 		},
 		{
 			name: "non-empty, no fatals",
-			validationResults: []ValidationResult{
+			validationResults: ValidationResultsFromSlice([]ValidationResult{
 				{
 					Message: "invalid field: foo",
 					Fatal:   false,
 				},
-			},
+			}),
 			want: "One or more validations failed:\ninvalid field: foo\n",
 		},
 		{
 			name: "one fatal result",
-			validationResults: []ValidationResult{
+			validationResults: ValidationResultsFromSlice([]ValidationResult{
 				{
 					Message: "invalid field: foo",
 					Fatal:   true,
 				},
-			},
+			}),
 			want: "One or more validations failed:\nfatal: invalid field: foo\n",
 		},
 		{
 			name: "multiple results",
-			validationResults: []ValidationResult{
+			validationResults: ValidationResultsFromSlice([]ValidationResult{
 				{
 					Message: "invalid field: test",
 					Fatal:   false,
@@ -92,7 +93,7 @@ func Test_ValidationResults_Error(t *testing.T) {
 					Message: "missing field: bar",
 					Fatal:   true,
 				},
-			},
+			}),
 			want: "One or more validations failed:\ninvalid field: test\nfatal: invalid field: foo\nfatal: missing field: bar\n",
 		},
 	}
@@ -100,7 +101,114 @@ func Test_ValidationResults_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			validationError := NewValidationError(tt.validationResults)
-			require.Equal(t, tt.want, validationError.Error(), "incorrect Error() result")
+
+			// check that the error contains the same messages, agnostic to order
+			require.ElementsMatch(
+				t,
+				strings.Split(tt.want, "\n"),
+				strings.Split(validationError.Error(), "\n"),
+				"incorrect Error() result",
+			)
 		})
 	}
+}
+
+func Test_ValidationResults_Add(t *testing.T) {
+	vrs := NewValidationResults()
+	vrs.Add(NewValidationResult("m1", false))
+	require.Equal(
+		t,
+		ValidationResultsFromSlice([]ValidationResult{
+			{
+				Message: "m1",
+				Fatal:   false,
+			},
+		}),
+		vrs,
+		"ValidationResult not added",
+	)
+	vrs.Add(NewValidationResult("m2", true))
+	require.Equal(
+		t,
+		ValidationResultsFromSlice([]ValidationResult{
+			{
+				Message: "m1",
+				Fatal:   false,
+			},
+			{
+				Message: "m2",
+				Fatal:   true,
+			},
+		}),
+		vrs,
+		"ValidationResult not added",
+	)
+
+	// now try to add a dupe - the collection should remain the same
+	vrs.Add(NewValidationResult("m2", true))
+	require.Equal(
+		t,
+		ValidationResultsFromSlice([]ValidationResult{
+			{
+				Message: "m1",
+				Fatal:   false,
+			},
+			{
+				Message: "m2",
+				Fatal:   true,
+			},
+		}),
+		vrs,
+		"ValidationResults.Add added a duplicate (bad)",
+	)
+}
+
+func Test_ValidationResults_Extend(t *testing.T) {
+	vrs1 := ValidationResultsFromSlice([]ValidationResult{
+		{
+			Message: "msg1",
+			Fatal:   false,
+		},
+		{
+			Message: "msg2",
+			Fatal:   true,
+		},
+	})
+
+	vrs2 := ValidationResultsFromSlice([]ValidationResult{
+		{
+			Message: "msg3",
+			Fatal:   false,
+		},
+		{
+			Message: "msg4",
+			Fatal:   true,
+		},
+	})
+
+	vrs1.Extend(vrs2)
+
+	require.Equal(
+		t,
+		ValidationResultsFromSlice([]ValidationResult{
+			{
+				Message: "msg1",
+				Fatal:   false,
+			},
+			{
+				Message: "msg2",
+				Fatal:   true,
+			},
+			{
+				Message: "msg3",
+				Fatal:   false,
+			},
+			{
+				Message: "msg4",
+				Fatal:   true,
+			},
+		}),
+		vrs1,
+		"validation results not extended",
+	)
 }

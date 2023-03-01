@@ -113,23 +113,22 @@ func (r *SearchRequest) WithQuery(q opensearchtools.Query) *SearchRequest {
 }
 
 // fromDomainSearchRequest creates a new SearchRequest from the given [opensearchtools.SearchRequest]
-func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (osReq opensearchtools.OpenSearchRequest[SearchRequest], err error) {
+func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest, opensearchtools.ValidationResults) {
+	vrs := opensearchtools.NewValidationResults()
+	var searchRequest SearchRequest
+
 	convertedQuery, err := V2QueryConverter(req.Query)
 	if err != nil {
-		return osReq, err
+		vrs.Add(opensearchtools.NewValidationResult(err.Error(), true))
+		return searchRequest, vrs
 	}
 
-	osReq = opensearchtools.NewOpenSearchRequest(
-		nil, // no validation done at this level for SearchRequest
-		SearchRequest{
-			Query: convertedQuery,
-			Index: req.Index,
-			Size:  req.Size,
-			Sort:  req.Sort,
-		},
-	)
-
-	return
+	return SearchRequest{
+		Query: convertedQuery,
+		Index: req.Index,
+		Size:  req.Size,
+		Sort:  req.Sort,
+	}, vrs
 }
 
 // Validate validates the given SearchRequest
@@ -172,7 +171,7 @@ func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*ope
 	}
 
 	resp := opensearchtools.NewOpenSearchResponse(
-		nil, // no additional validation
+		opensearchtools.NewValidationResults(), // no additional validation
 		osResp.StatusCode,
 		osResp.Header,
 		searchResp,
