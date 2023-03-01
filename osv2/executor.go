@@ -29,27 +29,23 @@ func NewExecutor(client *opensearch.Client) *Executor {
 //   - The request to OpenSearch fails
 //   - The results JSON cannot be unmarshalled
 func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse], err error) {
-	validationResults := opensearchtools.NewValidationResults()
-
 	osv2Req, vrs := fromDomainMGetRequest(req)
+	resp.ValidationResults.Extend(vrs)
 	if vrs.IsFatal() {
-		resp.ValidationResults.Extend(vrs)
 		return resp, opensearchtools.NewValidationError(vrs)
 	}
-	validationResults.Extend(vrs)
 
-	osv2Resp, err := osv2Req.Do(ctx, e.Client)
-	if err != nil {
-		return resp, err
+	osv2Resp, reqErr := osv2Req.Do(ctx, e.Client)
+	if reqErr != nil {
+		return resp, reqErr
 	}
-	validationResults.Extend(osv2Resp.ValidationResults)
 
-	return opensearchtools.NewOpenSearchResponse(
-		validationResults,
-		osv2Resp.StatusCode,
-		osv2Resp.Header,
-		osv2Resp.Response.toDomain(),
-	), nil
+	resp.ValidationResults.Extend(osv2Resp.ValidationResults)
+	resp.Response = osv2Resp.Response.toDomain()
+	resp.StatusCode = osv2Resp.StatusCode
+	resp.Header = osv2Resp.Header
+
+	return resp, nil
 }
 
 // Search executes the SearchRequest using the provided [opensearchtools.SearchRequest].
@@ -59,27 +55,23 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 //   - The request to OpenSearch fails
 //   - The results JSON cannot be unmarshalled
 func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse], err error) {
-	var validationResults opensearchtools.ValidationResults
-
 	osv2Req, vrs := fromDomainSearchRequest(req)
+	resp.ValidationResults.Extend(vrs)
 	if vrs.IsFatal() {
-		resp.ValidationResults.Extend(vrs)
 		return resp, opensearchtools.NewValidationError(vrs)
 	}
-	validationResults.Extend(vrs)
 
-	osv2Resp, err := osv2Req.Do(ctx, e.Client)
-	if err != nil {
-		return resp, err
+	osv2Resp, reqErr := osv2Req.Do(ctx, e.Client)
+	if reqErr != nil {
+		return resp, reqErr
 	}
-	validationResults.Extend(osv2Resp.ValidationResults)
 
-	return opensearchtools.NewOpenSearchResponse(
-		validationResults,
-		osv2Resp.StatusCode,
-		osv2Resp.Header,
-		osv2Resp.Response.ToDomain(),
-	), nil
+	resp.ValidationResults.Extend(osv2Resp.ValidationResults)
+	resp.Response = osv2Resp.Response.ToDomain()
+	resp.StatusCode = osv2Resp.StatusCode
+	resp.Header = osv2Resp.Header
+
+	return resp, nil
 }
 
 // Bulk executes the BulkRequest using the provided [opensearchtools.BulkRequest].
@@ -88,24 +80,23 @@ func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchReques
 // An error can be returned if:
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
-func (e *Executor) Bulk(ctx context.Context, req *opensearchtools.BulkRequest) (*opensearchtools.OpenSearchResponse[opensearchtools.BulkResponse], error) {
-	osv2Req := fromDomainBulkRequest(req)
-	validationRes := osv2Req.Validate()
-	if validationRes.IsFatal() {
-		return nil, opensearchtools.NewValidationError(validationRes)
+func (e *Executor) Bulk(ctx context.Context, req *opensearchtools.BulkRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.BulkResponse], err error) {
+	osv2Req, vrs := fromDomainBulkRequest(req)
+	resp.ValidationResults.Extend(vrs)
+
+	if vrs.IsFatal() {
+		return resp, opensearchtools.NewValidationError(vrs)
 	}
 
-	bulkResp, err := osv2Req.Do(ctx, e.Client)
-	if err != nil {
-		return nil, err
+	osv2Resp, reqErr := osv2Req.Do(ctx, e.Client)
+	if reqErr != nil {
+		return resp, reqErr
 	}
 
-	domainResp := bulkResp.Response.toDomain()
+	resp.ValidationResults.Extend(osv2Resp.ValidationResults)
+	resp.Response = osv2Resp.Response.toDomain()
+	resp.StatusCode = osv2Resp.StatusCode
+	resp.Header = osv2Resp.Header
 
-	return &opensearchtools.OpenSearchResponse[opensearchtools.BulkResponse]{
-		ValidationResults: validationRes,
-		StatusCode:        bulkResp.StatusCode,
-		Header:            bulkResp.Header,
-		Response:          &domainResp,
-	}, nil
+	return resp, nil
 }

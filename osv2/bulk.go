@@ -29,12 +29,16 @@ type BulkRequest struct {
 }
 
 // fromDomainBulkRequest creates a new [BulkRequest] from the given [opensearchtools.BulkRequest/.
-func fromDomainBulkRequest(req *opensearchtools.BulkRequest) BulkRequest {
+func fromDomainBulkRequest(req *opensearchtools.BulkRequest) (BulkRequest, opensearchtools.ValidationResults) {
+	// As more versions are implemented, these [opensearchtools.ValidationResults] will be used to contain issues
+	// converting from the domain model to the V2 model.
+	var vrs opensearchtools.ValidationResults
+
 	return BulkRequest{
 		Actions: req.Actions,
 		Refresh: req.Refresh,
 		Index:   req.Index,
-	}
+	}, vrs
 }
 
 // Validate validates the given BulkRequest
@@ -45,7 +49,7 @@ func (r *BulkRequest) Validate() opensearchtools.ValidationResults {
 	for _, a := range r.Actions {
 		// ensure Index is either set at the top level or set in each of the Actions
 		if topLevelIndexIsEmpty && a.Doc.Index() == "" {
-			validationResults = append(validationResults, opensearchtools.NewValidationResult(
+			validationResults.Add(opensearchtools.NewValidationResult(
 				fmt.Sprintf("Index not set at the BulkRequest level nor in the Action %s with ID %s",
 					a.Type, a.Doc.ID()), true))
 		}
@@ -53,7 +57,7 @@ func (r *BulkRequest) Validate() opensearchtools.ValidationResults {
 		// ensure that ID() is non-empty for Actions that require an ID
 		if a.Doc.ID() == "" &&
 			(a.Type == opensearchtools.BulkUpdate || a.Type == opensearchtools.BulkDelete) {
-			validationResults = append(validationResults, opensearchtools.NewValidationResult("Doc ID is empty", true))
+			validationResults.Add(opensearchtools.NewValidationResult("Doc ID is empty", true))
 		}
 	}
 
@@ -111,6 +115,11 @@ func (r *BulkRequest) ToOpenSearchJSON() ([]byte, error) {
 //   - The call to OpenSearch fails
 //   - The result json cannot be unmarshalled
 func (r *BulkRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.OpenSearchResponse[BulkResponse], error) {
+	vrs := r.Validate()
+	if vrs.IsFatal() {
+		return nil, opensearchtools.NewValidationError(vrs)
+	}
+
 	rawBody, jErr := r.ToOpenSearchJSON()
 	if jErr != nil {
 		return nil, jErr
@@ -131,16 +140,17 @@ func (r *BulkRequest) Do(ctx context.Context, client *opensearch.Client) (*opens
 		return nil, err
 	}
 
-	resp := &BulkResponse{}
+	resp := BulkResponse{}
 
-	if err := json.Unmarshal(respBuf.Bytes(), resp); err != nil {
+	if err := json.Unmarshal(respBuf.Bytes(), &resp); err != nil {
 		return nil, err
 	}
 
 	return &opensearchtools.OpenSearchResponse[BulkResponse]{
-		StatusCode: osResp.StatusCode,
-		Header:     osResp.Header,
-		Response:   resp,
+		StatusCode:        osResp.StatusCode,
+		Header:            osResp.Header,
+		Response:          resp,
+		ValidationResults: vrs,
 	}, nil
 }
 
