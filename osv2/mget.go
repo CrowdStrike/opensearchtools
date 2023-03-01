@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/opensearch-project/opensearch-go/v2"
 	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
@@ -155,9 +154,7 @@ func (m *MGetRequest) MarshalJSON() ([]byte, error) {
 // MGetResponse is an OpenSearch 2 specific struct corresponding to opensearchapi.Response and [opensearchtools.MGetResponse].
 // It holds a slice of mgetResults.
 type MGetResponse struct {
-	StatusCode int          `json:"-"`
-	Header     http.Header  `json:"-"`
-	Docs       []MGetResult `json:"docs,omitempty"`
+	Docs []MGetResult `json:"docs,omitempty"`
 }
 
 // toDomain converts this instance of an [MGetResponse] to an [opensearchtools.MGetResponse]

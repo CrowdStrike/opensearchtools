@@ -2,7 +2,6 @@ package osv2
 
 import (
 	"fmt"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -190,9 +189,6 @@ func Test_MGetResult_toDomain(t *testing.T) {
 }
 
 func Test_MGetResponse_toDomain(t *testing.T) {
-	testHeaders := http.Header{}
-	testHeaders.Add("x-foo", "bar")
-
 	tests := []struct {
 		name             string
 		osv2MGetResponse MGetResponse
@@ -201,8 +197,6 @@ func Test_MGetResponse_toDomain(t *testing.T) {
 		{
 			name: "Multiple docs returned",
 			osv2MGetResponse: MGetResponse{
-				StatusCode: 200,
-				Header:     testHeaders,
 				Docs: []MGetResult{
 					{
 						Index:       testIndex1,
@@ -274,9 +268,7 @@ func Test_MGetResponse_toDomain(t *testing.T) {
 		{
 			name: "No docs returned",
 			osv2MGetResponse: MGetResponse{
-				StatusCode: 200,
-				Header:     testHeaders,
-				Docs:       []MGetResult{},
+				Docs: []MGetResult{},
 			},
 			want: opensearchtools.MGetResponse{
 				Docs: []opensearchtools.MGetResult{},
