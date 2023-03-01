@@ -25,6 +25,7 @@ func NewExecutor(client *opensearch.Client) *Executor {
 // If the request is executed successfully, then an [opensearchtools.MGetResponse] with [opensearchtools.MGetResults]
 // will be returned.
 // An error can be returned if:
+//   - Fatal validation issues are found
 //   - The request to OpenSearch fails
 //   - The results JSON cannot be unmarshalled
 func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse], err error) {
@@ -32,6 +33,7 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 
 	osv2Req, vrs := fromDomainMGetRequest(req)
 	if vrs.IsFatal() {
+		resp.ValidationResults.Extend(vrs)
 		return resp, opensearchtools.NewValidationError(vrs)
 	}
 	validationResults.Extend(vrs)
@@ -53,6 +55,7 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 // Search executes the SearchRequest using the provided [opensearchtools.SearchRequest].
 // If the request is executed successfully, then an [opensearchtools.SearchResponse] will be returned.
 // An error can be returned if:
+//   - Fatal validation issues are found
 //   - The request to OpenSearch fails
 //   - The results JSON cannot be unmarshalled
 func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse], err error) {
@@ -60,6 +63,7 @@ func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchReques
 
 	osv2Req, vrs := fromDomainSearchRequest(req)
 	if vrs.IsFatal() {
+		resp.ValidationResults.Extend(vrs)
 		return resp, opensearchtools.NewValidationError(vrs)
 	}
 	validationResults.Extend(vrs)
