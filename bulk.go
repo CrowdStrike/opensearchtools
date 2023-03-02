@@ -1,20 +1,23 @@
 package opensearchtools
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
-
-	"github.com/opensearch-project/opensearch-go/v2"
-	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
 )
 
-// BulkRequest wraps the functionality of [opensearchapi.Bulk] by supporting request body creation.
-// An empty BulkRequest will fail to execute. At least one Action is required to be added.
+// Bulk defines a method which knows how to make an OpenSearch [Bulk] request.
+// It should be implemented by a version-specific executor.
 //
-// For more details see https://opensearch.org/docs/latest/api-reference/document-apis/bulk/
+// [Bulk]: https://opensearch.org/docs/latest/api-reference/document-apis/bulk/
+type Bulk interface {
+	Bulk(ctx context.Context, req *BulkRequest) (*OpenSearchResponse[BulkResponse], error)
+}
+
+// BulkRequest is a domain model union type for all the fields of BulkRequests for all
+// supported OpenSearch versions.
+// Currently supported versions are:
+//   - OpenSearch 2
+//
+// An empty BulkRequest will fail to execute. At least one Action is required to be added.
 type BulkRequest struct {
 	// Actions lists the actions to be performed in the BulkRequest
 	Actions []BulkAction
@@ -43,79 +46,14 @@ func (r *BulkRequest) WithIndex(index string) *BulkRequest {
 	return r
 }
 
-// ToOpenSearchJSON marshals the BulkRequest into the JSON format expected by OpenSearch.
-// Note: A BulkRequest is multi-line json with new line delimiters. It is not a singular valid json struct.
+// BulkResponse is a domain model union response type for BulkRequest for all supported OpenSearch versions.
+// Currently supported versions are:
+//   - OpenSearch 2
 //
-// { action1 json }
-// { action2 json }
-func (r *BulkRequest) ToOpenSearchJSON() ([]byte, error) {
-	if len(r.Actions) == 0 {
-		return nil, fmt.Errorf("bulk request requires at least one action")
-	}
-
-	bodyBuf := new(bytes.Buffer)
-	for _, op := range r.Actions {
-		jsonLines, jErr := op.MarshalJSONLines()
-		if jErr != nil {
-			return nil, jErr
-		}
-
-		for _, line := range jsonLines {
-			bodyBuf.Write(line)
-			bodyBuf.WriteRune('\n')
-		}
-	}
-
-	return bodyBuf.Bytes(), nil
-}
-
-// Do executes the BulkRequest using the provided opensearch.Client.
-// If the request is executed successfully, then a BulkResponse will be returned.
-// An error can be returned if
-//
-//   - Any Action is missing an action
-//   - The call to OpenSearch fails
-//   - The result json cannot be unmarshalled
-func (r *BulkRequest) Do(ctx context.Context, client *opensearch.Client) (*BulkResponse, error) {
-	rawBody, jErr := r.ToOpenSearchJSON()
-	if jErr != nil {
-		return nil, jErr
-	}
-
-	osResp, rErr := opensearchapi.BulkRequest{
-		Body:    bytes.NewReader(rawBody),
-		Refresh: string(r.Refresh),
-		Index:   r.Index,
-	}.Do(ctx, client)
-
-	if rErr != nil {
-		return nil, rErr
-	}
-
-	var respBuf bytes.Buffer
-	if _, err := respBuf.ReadFrom(osResp.Body); err != nil {
-		return nil, err
-	}
-
-	resp := &BulkResponse{
-		StatusCode: osResp.StatusCode,
-		Header:     osResp.Header,
-	}
-
-	if err := json.Unmarshal(respBuf.Bytes(), &resp); err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-// BulkResponse wraps the functionality of [opensearchapi.Response] by unmarshalling the api response into
-// a slice of [bulk.ActionResponse].
+// Contains a slice of [ActionResponse] for each individual [BulkAction] performed by the request.
 type BulkResponse struct {
-	StatusCode int              `json:"-"`
-	Header     http.Header      `json:"-"`
-	Took       int64            `json:"took"`
-	Errors     bool             `json:"errors"`
-	Items      []ActionResponse `json:"items"`
-	Error      *Error           `json:"error,omitempty"`
+	Took   int64
+	Errors bool
+	Items  []ActionResponse
+	Error  *Error
 }

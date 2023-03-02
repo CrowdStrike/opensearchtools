@@ -23,7 +23,11 @@ const (
 	BulkUpdate BulkActionType = "update"
 )
 
-// BulkAction is a union of the different type of actions that can be performed in a [BulkRequest].
+// BulkAction is a domain model union type for all actions a [BulkRequest] can perform across all
+// supported OpenSearch versions.
+// Currently supported versions are:
+//   - OpenSearch 2
+//
 // While the struct has all the combined fields, only valid fields will be marshaled depending on the type of action.
 // For this reason, it's recommended to use the type constructors:
 //
@@ -34,65 +38,65 @@ const (
 //
 // For more details, see https://opensearch.org/docs/latest/api-reference/document-apis/bulk/#request-body
 type BulkAction struct {
-	actionType BulkActionType
-	doc        RoutableDoc
+	Type BulkActionType
+	Doc  RoutableDoc
 }
 
 // NewCreateBulkAction instantiates a BulkCreate action.
 func NewCreateBulkAction(doc RoutableDoc) BulkAction {
 	return BulkAction{
-		actionType: BulkCreate,
-		doc:        doc,
+		Type: BulkCreate,
+		Doc:  doc,
 	}
 }
 
 // NewIndexBulkAction instantiates a BulkIndex action.
 func NewIndexBulkAction(doc RoutableDoc) BulkAction {
 	return BulkAction{
-		actionType: BulkIndex,
-		doc:        doc,
+		Type: BulkIndex,
+		Doc:  doc,
 	}
 }
 
 // NewUpdateBulkAction instantiates a BulkUpdate action.
 func NewUpdateBulkAction(doc RoutableDoc) BulkAction {
 	return BulkAction{
-		actionType: BulkUpdate,
-		doc:        doc,
+		Type: BulkUpdate,
+		Doc:  doc,
 	}
 }
 
 // NewDeleteBulkAction instantiates a BulkDelete action.
 func NewDeleteBulkAction(index, id string) BulkAction {
 	return BulkAction{
-		actionType: BulkDelete,
-		doc:        NewDocumentRef(index, id),
+		Type: BulkDelete,
+		Doc:  NewDocumentRef(index, id),
 	}
 }
 
 // MarshalJSONLines marshals the BulkAction into the appropriate JSON lines depending on the BulkActionType.
 func (b *BulkAction) MarshalJSONLines() ([][]byte, error) {
-	if b.doc == nil {
-		return nil, fmt.Errorf("missing routing information on BulkAction %s", b.actionType)
+	if b.Doc == nil {
+		return nil, fmt.Errorf("missing routing information on BulkAction %s", b.Type)
 	}
 
-	if b.doc.ID() == "" {
-		return nil, fmt.Errorf("missing id routing information on BulkAction %s", b.actionType)
+	if b.Doc.ID() == "" {
+		return nil, fmt.Errorf("missing id routing information on BulkAction %s", b.Type)
 	}
 
 	var jsonLines [][]byte
 
-	actionRouting := map[string]any{"_id": b.doc.ID()}
+	actionRouting := map[string]any{"_id": b.Doc.ID()}
 
 	// if Index is empty, use the request level index for routing
-	if b.doc.Index() != "" {
-		actionRouting["_index"] = b.doc.Index()
+	if b.Doc.Index() != "" {
+		actionRouting["_index"] = b.Doc.Index()
 	}
 
 	actionMeta := make(map[string]any)
-	switch b.actionType {
+	switch b.Type {
 	case BulkCreate, BulkIndex, BulkUpdate:
-		actionMeta[string(b.actionType)] = actionRouting
+		actionMeta[string(b.Type)] = actionRouting
 		var (
 			line []byte
 			jErr error
@@ -104,26 +108,29 @@ func (b *BulkAction) MarshalJSONLines() ([][]byte, error) {
 
 		jsonLines = append(jsonLines, line)
 
-		if line, jErr = json.Marshal(b.doc); jErr != nil {
+		if line, jErr = json.Marshal(b.Doc); jErr != nil {
 			return nil, jErr
 		}
 
 		jsonLines = append(jsonLines, line)
 	case BulkDelete:
-		actionMeta[string(b.actionType)] = actionRouting
+		actionMeta[string(b.Type)] = actionRouting
 		if line, jErr := json.Marshal(actionMeta); jErr != nil {
 			return nil, jErr
 		} else {
 			jsonLines = append(jsonLines, line)
 		}
 	default:
-		return nil, fmt.Errorf("unssuported BulkActionType: %s", b.actionType)
+		return nil, fmt.Errorf("unssuported BulkActionType: %s", b.Type)
 	}
 
 	return jsonLines, nil
 }
 
-// ActionResponse encapsulates the individual response for each operation
+// ActionResponse is a domain model union type for all the fields of action responses for all
+// supported OpenSearch versions.
+// Currently supported versions are:
+//   - OpenSearch 2
 type ActionResponse struct {
 	Type        string       `json:"-"`
 	Index       string       `json:"_index"`
