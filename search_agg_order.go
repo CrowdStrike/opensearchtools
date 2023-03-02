@@ -5,7 +5,7 @@ import (
 )
 
 // Order encapsulates the sorting capabilities for [Aggregation] requests to OpenSearch.
-// An empty Order will be rejected by OpenSearch as the target must be non-null and non-empty
+// An empty Order will be rejected by OpenSearch as the target must be non-nil and non-empty
 type Order struct {
 	Target string
 	Desc   bool
@@ -21,6 +21,10 @@ func NewOrder(field string, desc bool) Order {
 
 // ToOpenSearchJSON converts the Order to the correct OpenSearch JSON.
 func (o Order) ToOpenSearchJSON() ([]byte, error) {
+	if o.Target == "" {
+		return nil, fmt.Errorf("aggregation order must have a non-nil non-empty target")
+	}
+
 	dir := "asc"
 	if o.Desc {
 		dir = "desc"

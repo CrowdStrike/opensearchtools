@@ -152,13 +152,13 @@ func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest,
 	vrs := opensearchtools.NewValidationResults()
 	var (
 		searchRequest SearchRequest
-		v2Aggs        map[string]opensearchtools.Aggregation
-		v2Query       opensearchtools.Query
+		aggs          map[string]opensearchtools.Aggregation
+		query         opensearchtools.Query
 		cErr          error
 	)
 
 	if req.Query != nil {
-		v2Query, cErr = V2QueryConverter(req.Query)
+		query, cErr = V2QueryConverter(req.Query)
 		if cErr != nil {
 			vrs.Add(opensearchtools.NewValidationResult(cErr.Error(), true))
 			return searchRequest, vrs
@@ -166,7 +166,7 @@ func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest,
 	}
 
 	if len(req.Aggregations) != 0 {
-		v2Aggs = make(map[string]opensearchtools.Aggregation)
+		aggs = make(map[string]opensearchtools.Aggregation)
 		for name, agg := range req.Aggregations {
 			cAgg, cErr := V2AggregateConverter(agg)
 			if cErr != nil {
@@ -174,15 +174,15 @@ func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest,
 				return searchRequest, vrs
 			}
 
-			v2Aggs[name] = cAgg
+			aggs[name] = cAgg
 		}
 	}
 
 	searchRequest.Index = req.Index
 	searchRequest.Size = req.Size
 	searchRequest.Sort = req.Sort
-	searchRequest.Query = v2Query
-	searchRequest.Aggregations = v2Aggs
+	searchRequest.Query = query
+	searchRequest.Aggregations = aggs
 
 	return searchRequest, vrs
 }
