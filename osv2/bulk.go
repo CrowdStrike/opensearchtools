@@ -30,7 +30,7 @@ type BulkRequest struct {
 
 // fromDomainBulkRequest creates a new [BulkRequest] from the given [opensearchtools.BulkRequest/.
 func fromDomainBulkRequest(req *opensearchtools.BulkRequest) (BulkRequest, opensearchtools.ValidationResults) {
-	// As more versions are implemented, these [opensearchtools.ValidationResults] will be used to contain issues
+	// As more versions are implemented, these [opensearchtools.ValidationResults] may be used to contain issues
 	// converting from the domain model to the V2 model.
 	var vrs opensearchtools.ValidationResults
 
@@ -83,7 +83,7 @@ func (r *BulkRequest) WithIndex(index string) *BulkRequest {
 
 // ToOpenSearchJSON marshals the BulkRequest into the JSON format expected by OpenSearch.
 // Note: A BulkRequest is multi-line json with new line delimiters. It is not a singular valid json struct.
-//
+// For example:
 // { action1 json }
 // { action2 json }
 func (r *BulkRequest) ToOpenSearchJSON() ([]byte, error) {
@@ -107,8 +107,8 @@ func (r *BulkRequest) ToOpenSearchJSON() ([]byte, error) {
 	return bodyBuf.Bytes(), nil
 }
 
-// Do executes the BulkRequest using the provided opensearch.Client.
-// If the request is executed successfully, then a BulkResponse will be returned.
+// Do executes the [BulkRequest] using the provided opensearch.Client.
+// If the request is executed successfully, then a [BulkResponse] will be returned.
 // An error can be returned if
 //
 //   - Any Action is missing an action
