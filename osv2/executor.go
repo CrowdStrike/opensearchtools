@@ -67,7 +67,7 @@ func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchReques
 	}
 
 	resp.ValidationResults.Extend(osv2Resp.ValidationResults)
-	resp.Response = osv2Resp.Response.ToDomain()
+	resp.Response = osv2Resp.Response.toDomain()
 	resp.StatusCode = osv2Resp.StatusCode
 	resp.Header = osv2Resp.Header
 

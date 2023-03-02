@@ -67,6 +67,13 @@ func TestSearchRequest_ToOpenSearchJSON(t *testing.T) {
 			want:    `{"size":1}`,
 			wantErr: false,
 		},
+		{
+			name: "With Terms Aggregation",
+			search: NewSearchRequest().
+				AddAggregation("t", opensearchtools.NewTermsAggregation("field")),
+			want:    `{"aggs":{"t":{"terms":{"field":"field"}}}}`,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -274,7 +281,7 @@ func TestSearchResponse_ToDomain(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.target.ToDomain()
+			got := tt.target.toDomain()
 			require.Equal(t, tt.want, got)
 		})
 	}

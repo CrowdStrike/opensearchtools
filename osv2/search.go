@@ -32,6 +32,9 @@ type SearchRequest struct {
 
 	// Sort(s) to order the results returned
 	Sort []opensearchtools.Sort
+
+	// Aggregations to be performed on the results of the Query
+	Aggregations map[string]opensearchtools.Aggregation
 }
 
 // V2QueryConverter will do any translations needed from domain level queries into V2 specifics, if needed.
@@ -42,6 +45,13 @@ func V2QueryConverter(query opensearchtools.Query) (opensearchtools.Query, error
 	default:
 		return q, nil
 	}
+}
+
+// V2AggregateConverter will do any translations needed from domain level queries into V2 specifics, if needed.
+func V2AggregateConverter(agg opensearchtools.Aggregation) (opensearchtools.Aggregation, error) {
+	//TODO this is a logical place holder to instantiate the pattern.
+	// When more versions are implemented, this method will need updating.
+	return agg, nil
 }
 
 // NewSearchRequest instantiates a SearchRequest with a Size of -1.
@@ -84,7 +94,32 @@ func (r *SearchRequest) ToOpenSearchJSON() ([]byte, error) {
 		source["sort"] = sorts
 	}
 
+	if len(r.Aggregations) > 0 {
+		aggs := make(map[string]any, len(r.Aggregations))
+		for name, agg := range r.Aggregations {
+			aggJSON, jErr := agg.ToOpenSearchJSON()
+			if jErr != nil {
+				return nil, jErr
+			}
+
+			aggs[name] = json.RawMessage(aggJSON)
+		}
+
+		source["aggs"] = aggs
+	}
+
 	return json.Marshal(source)
+}
+
+// AddAggregation to the search request with the desired name
+func (r *SearchRequest) AddAggregation(name string, agg opensearchtools.Aggregation) *SearchRequest {
+	if r.Aggregations == nil {
+		r.Aggregations = map[string]opensearchtools.Aggregation{name: agg}
+	} else {
+		r.Aggregations[name] = agg
+	}
+
+	return r
 }
 
 // AddIndices sets the index list for the request.
@@ -115,20 +150,41 @@ func (r *SearchRequest) WithQuery(q opensearchtools.Query) *SearchRequest {
 // fromDomainSearchRequest creates a new SearchRequest from the given [opensearchtools.SearchRequest]
 func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest, opensearchtools.ValidationResults) {
 	vrs := opensearchtools.NewValidationResults()
-	var searchRequest SearchRequest
+	var (
+		searchRequest SearchRequest
+		aggs          map[string]opensearchtools.Aggregation
+		query         opensearchtools.Query
+		cErr          error
+	)
 
-	convertedQuery, err := V2QueryConverter(req.Query)
-	if err != nil {
-		vrs.Add(opensearchtools.NewValidationResult(err.Error(), true))
-		return searchRequest, vrs
+	if req.Query != nil {
+		query, cErr = V2QueryConverter(req.Query)
+		if cErr != nil {
+			vrs.Add(opensearchtools.NewValidationResult(cErr.Error(), true))
+			return searchRequest, vrs
+		}
 	}
 
-	return SearchRequest{
-		Query: convertedQuery,
-		Index: req.Index,
-		Size:  req.Size,
-		Sort:  req.Sort,
-	}, vrs
+	if len(req.Aggregations) != 0 {
+		aggs = make(map[string]opensearchtools.Aggregation)
+		for name, agg := range req.Aggregations {
+			cAgg, cErr := V2AggregateConverter(agg)
+			if cErr != nil {
+				vrs.Add(opensearchtools.NewValidationResult(cErr.Error(), true))
+				return searchRequest, vrs
+			}
+
+			aggs[name] = cAgg
+		}
+	}
+
+	searchRequest.Index = req.Index
+	searchRequest.Size = req.Size
+	searchRequest.Sort = req.Sort
+	searchRequest.Query = query
+	searchRequest.Aggregations = aggs
+
+	return searchRequest, vrs
 }
 
 // Validate validates the given SearchRequest
@@ -181,20 +237,33 @@ func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*ope
 
 // SearchResponse wraps the functionality of [opensearchapi.Response] by supporting request parsing.
 type SearchResponse struct {
-	Took     int       `json:"took"`
-	TimedOut bool      `json:"timed_out"`
-	Shards   ShardMeta `json:"_shards,omitempty"`
-	Hits     Hits      `json:"hits"`
-	Error    *Error    `json:"error,omitempty"`
+	Took         int                        `json:"took"`
+	TimedOut     bool                       `json:"timed_out"`
+	Shards       ShardMeta                  `json:"_shards,omitempty"`
+	Hits         Hits                       `json:"hits"`
+	Error        *Error                     `json:"error,omitempty"`
+	Aggregations map[string]json.RawMessage `json:"aggregations,omitempty"`
 }
 
-// ToDomain converts this instance of a [SearchResponse] into an [opensearchtools.SearchResponse].
-func (sr *SearchResponse) ToDomain() opensearchtools.SearchResponse {
+// GetAggregationResultSource implements [opensearchtools.AggregationResultSet] to fetch an aggregation result and
+// return the raw JSON source for the provided name.
+func (sr *SearchResponse) GetAggregationResultSource(name string) ([]byte, bool) {
+	if len(sr.Aggregations) == 0 {
+		return nil, false
+	}
+
+	aggSource, exists := sr.Aggregations[name]
+	return aggSource, exists
+}
+
+// toDomain converts this instance of a [SearchResponse] into an [opensearchtools.SearchResponse].
+func (sr *SearchResponse) toDomain() opensearchtools.SearchResponse {
 	domainResp := opensearchtools.SearchResponse{
-		Took:     sr.Took,
-		TimedOut: sr.TimedOut,
-		Shards:   sr.Shards.toDomain(),
-		Hits:     sr.Hits.toDomain(),
+		Took:         sr.Took,
+		TimedOut:     sr.TimedOut,
+		Shards:       sr.Shards.toDomain(),
+		Hits:         sr.Hits.toDomain(),
+		Aggregations: sr.Aggregations,
 	}
 
 	if sr.Error != nil {
