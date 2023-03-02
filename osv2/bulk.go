@@ -84,8 +84,8 @@ func (r *BulkRequest) WithIndex(index string) *BulkRequest {
 // ToOpenSearchJSON marshals the BulkRequest into the JSON format expected by OpenSearch.
 // Note: A BulkRequest is multi-line json with new line delimiters. It is not a singular valid json struct.
 // For example:
-// { action1 json }
-// { action2 json }
+// 	{ action1 json }
+// 	{ action2 json }
 func (r *BulkRequest) ToOpenSearchJSON() ([]byte, error) {
 	if len(r.Actions) == 0 {
 		return nil, fmt.Errorf("bulk request requires at least one action")
