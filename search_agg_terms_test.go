@@ -29,8 +29,12 @@ func TestTermsAggregation_ToOpenSearchJSON(t *testing.T) {
 			name: "Terms Aggregation with all options set",
 			target: NewTermsAggregation("field").
 				AddOrder(NewOrder("field", true)).
-				WithSize(10),
-			want:    `{"terms":{"field":"field","size":10,"order":[{"field":"desc"}]}}`,
+				WithSize(10).
+				WithInclude("include").
+				WithExclude("exclude").
+				WithMinDocCount(10).
+				WithMissing("missing"),
+			want:    `{"terms":{"field":"field","size":10,"include":"include","exclude":"exclude","missing":"missing","min_doc_count":10,"order":[{"field":"desc"}]}}`,
 			wantErr: false,
 		},
 		{
@@ -39,6 +43,41 @@ func TestTermsAggregation_ToOpenSearchJSON(t *testing.T) {
 				WithSize(-5),
 			want:    `{"terms":{"field":"field"}}`,
 			wantErr: false,
+		},
+		{
+			name: "Terms aggregation with negative MinDocCount is ignored",
+			target: NewTermsAggregation("field").
+				WithMinDocCount(-5),
+			want:    `{"terms":{"field":"field"}}`,
+			wantErr: false,
+		},
+		{
+			name: "Terms aggregation with include values",
+			target: NewTermsAggregation("field").
+				WithIncludes([]string{"1", "2"}),
+			want:    `{"terms":{"field":"field","include":["1","2"]}}`,
+			wantErr: false,
+		},
+		{
+			name: "Terms aggregation with exclude values",
+			target: NewTermsAggregation("field").
+				WithExcludes([]string{"1", "2"}),
+			want:    `{"terms":{"field":"field","exclude":["1","2"]}}`,
+			wantErr: false,
+		},
+		{
+			name: "Terms aggregation with include and include values fails",
+			target: NewTermsAggregation("field").
+				WithIncludes([]string{"1", "2"}).
+				WithInclude("fail"),
+			wantErr: true,
+		},
+		{
+			name: "Terms aggregation with exclude and exclude values fails",
+			target: NewTermsAggregation("field").
+				WithExcludes([]string{"1", "2"}).
+				WithExclude("fail"),
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -78,7 +117,6 @@ func TestTermsAggregation_WithSubAggregations_ToOpenSearchJSON(t *testing.T) {
 					AddSubAggregation("double_nested", NewTermsAggregation("field3"))),
 			want: `{"terms":{"field":"field1"},"aggs":{"nested_terms":{"terms":{"field":"field2"},"aggs":{"double_nested":{"terms":{"field":"field3"}}}}}}`,
 		},
-		//TODO add other aggregation types as they're created
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -101,13 +139,13 @@ func TestTermsAggregationResult_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name    string
 		rawJSON []byte
-		want    TermsAggregationResult
+		want    TermsAggregationResults
 		wantErr bool
 	}{
 		{
 			name:    "Basic result",
 			rawJSON: []byte(`{"doc_count_error_upper_bound":10,"sum_other_doc_count":10,"buckets":[{"key":"field_value","doc_count":10}]}`),
-			want: TermsAggregationResult{
+			want: TermsAggregationResults{
 				DocCountErrorUpperBound: 10,
 				SumOtherDocCount:        10,
 				Buckets: []TermBucketResult{{
@@ -121,7 +159,7 @@ func TestTermsAggregationResult_UnmarshalJSON(t *testing.T) {
 		{
 			name:    "Empty results",
 			rawJSON: []byte(`{"doc_count_error_upper_bound":0,"sum_other_doc_count":0,"buckets":[]}`),
-			want: TermsAggregationResult{
+			want: TermsAggregationResults{
 				DocCountErrorUpperBound: 0,
 				SumOtherDocCount:        0,
 				Buckets:                 []TermBucketResult{},
@@ -130,7 +168,7 @@ func TestTermsAggregationResult_UnmarshalJSON(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var got TermsAggregationResult
+			var got TermsAggregationResults
 			gotErr := json.Unmarshal(tt.rawJSON, &got)
 
 			if (gotErr != nil) != tt.wantErr {
