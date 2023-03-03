@@ -17,7 +17,7 @@ type DateHistogramAggregation struct {
 
 	// MinDocCount is the lower count threshold for a bucket to be included in the results.
 	// Negative counts will be omitted
-	MinDocCount int
+	MinDocCount int64
 
 	// Interval string using OpenSearch [date math].
 	// [date math]: https://opensearch.org/docs/latest/opensearch/supported-field-types/date/#date-math
@@ -44,7 +44,7 @@ func NewDateHistogramAggregation(field, interval string) *DateHistogramAggregati
 }
 
 // WithMinDocCount the lower count threshold for a bucket to be included in the results
-func (d *DateHistogramAggregation) WithMinDocCount(minCount int) *DateHistogramAggregation {
+func (d *DateHistogramAggregation) WithMinDocCount(minCount int64) *DateHistogramAggregation {
 	d.MinDocCount = minCount
 	return d
 }
