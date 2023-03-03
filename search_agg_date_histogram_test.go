@@ -26,15 +26,16 @@ func TestDateHistogramAggregation_ToOpenSearchJSON(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Terms Aggregation with all options set",
+			name: "Date histogram aggregation with all options set",
 			target: NewDateHistogramAggregation("field", "day").
 				WithMinDocCount(10).
-				WithTimeZone("-01:00"),
-			want:    `{"date_histogram":{"field":"field","interval":"day","min_doc_count":10,"time_zone":"-01:00"}}`,
+				WithTimeZone("-01:00").
+				AddOrder(NewOrder("field", true)),
+			want:    `{"date_histogram":{"field":"field","interval":"day","min_doc_count":10,"time_zone":"-01:00","order":[{"field":"desc"}]}}`,
 			wantErr: false,
 		},
 		{
-			name: "Terms aggregation with negative MinDocCount is ignored",
+			name: "Date histogram aggregation with negative MinDocCount is ignored",
 			target: NewDateHistogramAggregation("field", "day").
 				WithMinDocCount(-5),
 			want:    `{"date_histogram":{"field":"field","interval":"day"}}`,

@@ -27,6 +27,9 @@ type DateHistogramAggregation struct {
 	// Set the TimeZone to overwrite this default
 	TimeZone string
 
+	// Order list of [Order]s to sort the aggregation buckets. Default order is _count: desc
+	Order []Order
+
 	// Aggregations sub aggregations for each bucket. Mapped by string label to sub aggregation
 	Aggregations map[string]Aggregation
 }
@@ -52,6 +55,12 @@ func (d *DateHistogramAggregation) WithMinDocCount(minCount int64) *DateHistogra
 // WithTimeZone overwriting the default UTC timezone
 func (d *DateHistogramAggregation) WithTimeZone(tz string) *DateHistogramAggregation {
 	d.TimeZone = tz
+	return d
+}
+
+// AddOrder of the returned buckets
+func (d *DateHistogramAggregation) AddOrder(orders ...Order) *DateHistogramAggregation {
+	d.Order = append(d.Order, orders...)
 	return d
 }
 
@@ -103,6 +112,20 @@ func (d *DateHistogramAggregation) ToOpenSearchJSON() ([]byte, error) {
 
 	if d.TimeZone != "" {
 		da["time_zone"] = d.TimeZone
+	}
+
+	if len(d.Order) > 0 {
+		var rawOrder []json.RawMessage
+		for _, o := range d.Order {
+			source, oErr := o.ToOpenSearchJSON()
+			if oErr != nil {
+				return nil, oErr
+			}
+
+			rawOrder = append(rawOrder, source)
+		}
+
+		da["order"] = rawOrder
 	}
 
 	source := map[string]any{
