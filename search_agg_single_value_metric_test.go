@@ -36,8 +36,9 @@ func TestSingleValueMetricAggregation_ToOpenSearchJSON(t *testing.T) {
 		{
 			name: "Cardinality Aggregation with precision",
 			target: NewCardinalityAggregation("field").
-				WithPrecisionThreshold(10),
-			want:    `{"cardinality":{"field":"field","precision_threshold":10}}`,
+				WithPrecisionThreshold(10).
+				WithMissing("value"),
+			want:    `{"cardinality":{"field":"field","precision_threshold":10,"missing":"value"}}`,
 			wantErr: false,
 		},
 		{

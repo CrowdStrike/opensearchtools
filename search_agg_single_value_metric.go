@@ -52,6 +52,11 @@ type SingleValueMetricAggregation struct {
 	// threshold below which counts are expected to be close to accurate.
 	// Negative values will be omitted
 	PrecisionThreshold int
+
+	// Missing is used to define how documents missing are missing a value should be treated.
+	// For SingleValueMetricAggregations, Missing is the value that will be substituted in if
+	// the document does not contain the target Field
+	Missing any
 }
 
 // NewCardinalityAggregation instantiates a SingleValueMetricAggregation with type CardinalityAggregation,
@@ -110,6 +115,11 @@ func (c *SingleValueMetricAggregation) WithPrecisionThreshold(p int) *SingleValu
 	return c
 }
 
+func (c *SingleValueMetricAggregation) WithMissing(missing any) *SingleValueMetricAggregation {
+	c.Missing = missing
+	return c
+}
+
 // ToOpenSearchJSON converts the SingleValueMetricAggregation to the correct OpenSearch JSON.
 func (c *SingleValueMetricAggregation) ToOpenSearchJSON() ([]byte, error) {
 	if c.Field == "" {
@@ -126,6 +136,10 @@ func (c *SingleValueMetricAggregation) ToOpenSearchJSON() ([]byte, error) {
 
 	if c.PrecisionThreshold >= 0 {
 		ca["precision_threshold"] = c.PrecisionThreshold
+	}
+
+	if c.Missing != nil {
+		ca["missing"] = c.Missing
 	}
 
 	source := map[string]any{
