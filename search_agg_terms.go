@@ -20,7 +20,7 @@ type TermsAggregation struct {
 
 	// MinDocCount is the lower count threshold for a bucket to be included in the results.
 	// Negative counts will be omitted
-	MinDocCount int
+	MinDocCount int64
 
 	// Missing counts documents that are missing the field being aggregated
 	Missing string
@@ -81,7 +81,7 @@ func (t *TermsAggregation) AddSubAggregation(name string, agg Aggregation) Bucke
 }
 
 // WithMinDocCount the lower count threshold for a bucket to be included in the results
-func (t *TermsAggregation) WithMinDocCount(minCount int) *TermsAggregation {
+func (t *TermsAggregation) WithMinDocCount(minCount int64) *TermsAggregation {
 	t.MinDocCount = minCount
 	return t
 }
