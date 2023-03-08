@@ -157,7 +157,7 @@ type RangeBucketResult struct {
 	ToString string
 
 	// DocCount - number of documents that fit in this bucket
-	DocCount uint64
+	DocCount int64
 
 	// SubAggregationResults for any nested aggregations
 	SubAggregationResults map[string]json.RawMessage
@@ -220,4 +220,17 @@ func (r *RangeBucketResult) GetAggregationResultSource(name string) ([]byte, boo
 
 	subAggSource, exists := r.SubAggregationResults[name]
 	return subAggSource, exists
+}
+
+// Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
+func (r *RangeBucketResult) Keys() []string {
+	keys := make([]string, len(r.SubAggregationResults))
+
+	i := 0
+	for k := range r.SubAggregationResults {
+		keys[i] = k
+		i++
+	}
+
+	return keys
 }

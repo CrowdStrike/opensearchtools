@@ -131,3 +131,16 @@ func (f *FilterAggregationResults) GetAggregationResultSource(name string) ([]by
 	subAggSource, exists := f.SubAggregationResults[name]
 	return subAggSource, exists
 }
+
+// Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
+func (f *FilterAggregationResults) Keys() []string {
+	keys := make([]string, len(f.SubAggregationResults))
+
+	i := 0
+	for k := range f.SubAggregationResults {
+		keys[i] = k
+		i++
+	}
+
+	return keys
+}

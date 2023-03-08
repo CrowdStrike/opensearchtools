@@ -184,8 +184,8 @@ func (d *DateHistogramAggregationResults) UnmarshalJSON(m []byte) error {
 // DateHistogramBucketResult is a [AggregationResultMap] for a DateHistogramAggregation
 type DateHistogramBucketResult struct {
 	KeyString             string
-	Key                   uint64
-	DocCount              uint64
+	Key                   int64
+	DocCount              int64
 	SubAggregationResults map[string]json.RawMessage
 }
 
@@ -233,4 +233,17 @@ func (d *DateHistogramBucketResult) GetAggregationResultSource(name string) ([]b
 
 	subAggSource, exists := d.SubAggregationResults[name]
 	return subAggSource, exists
+}
+
+// Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
+func (d *DateHistogramBucketResult) Keys() []string {
+	keys := make([]string, len(d.SubAggregationResults))
+
+	i := 0
+	for k := range d.SubAggregationResults {
+		keys[i] = k
+		i++
+	}
+
+	return keys
 }

@@ -217,8 +217,8 @@ func (t *TermsAggregation) ToOpenSearchJSON() ([]byte, error) {
 
 // TermsAggregationResults represents the results from a terms aggregation request.
 type TermsAggregationResults struct {
-	DocCountErrorUpperBound uint64
-	SumOtherDocCount        uint64
+	DocCountErrorUpperBound int64
+	SumOtherDocCount        int64
 	Buckets                 []TermBucketResult
 }
 
@@ -260,7 +260,7 @@ func (t *TermsAggregationResults) UnmarshalJSON(m []byte) error {
 // TermBucketResult is a [AggregationResultMap] for a TermsAggregation
 type TermBucketResult struct {
 	Key                   string
-	DocCount              uint64
+	DocCount              int64
 	SubAggregationResults map[string]json.RawMessage
 }
 
@@ -305,4 +305,17 @@ func (t *TermBucketResult) GetAggregationResultSource(name string) ([]byte, bool
 
 	subAggSource, exists := t.SubAggregationResults[name]
 	return subAggSource, exists
+}
+
+// Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
+func (t *TermBucketResult) Keys() []string {
+	keys := make([]string, len(t.SubAggregationResults))
+
+	i := 0
+	for k := range t.SubAggregationResults {
+		keys[i] = k
+		i++
+	}
+
+	return keys
 }
