@@ -80,9 +80,9 @@ func (d *DateHistogramAggregation) ConvertSubAggregations(converter AggregateVer
 	convertedAggs := make(map[string]Aggregation, len(d.Aggregations))
 
 	for name, agg := range d.Aggregations {
-		cAgg, cErr := converter(agg)
-		if cErr != nil {
-			return nil, cErr
+		cAgg, err := converter(agg)
+		if err != nil {
+			return nil, err
 		}
 
 		convertedAggs[name] = cAgg
