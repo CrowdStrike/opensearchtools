@@ -8,7 +8,7 @@ import (
 // Search defines a method which knows how to make an OpenSearch [Search] request.
 // It should be implemented by a version-specific executor.
 //
-// [Search]: https://openorg/docs/latest/api-reference/search/
+// [Search]: https://opensearch.org/docs/latest/api-reference/search/
 type Search interface {
 	Search(ctx context.Context, req *SearchRequest) (OpenSearchResponse[*SearchResponse], error)
 }
@@ -40,6 +40,12 @@ type SearchRequest struct {
 
 	// Sort(s) to order the results returned
 	Sort []Sort
+
+	// TrackTotalHits - whether to return how many documents matched the query.
+	TrackTotalHits any
+
+	// Routing - Values used to route the update by query operation to a specific shard
+	Routing []string
 
 	// Aggregations to be performed on the results of the Query
 	Aggregations map[string]Aggregation
@@ -77,6 +83,19 @@ func (r *SearchRequest) AddSorts(sort ...Sort) *SearchRequest {
 // WithQuery to be performed by the SearchRequest.
 func (r *SearchRequest) WithQuery(q Query) *SearchRequest {
 	r.Query = q
+	return r
+}
+
+// WithTrackTotalHits if set to true it will count all documents,
+// otherwise a number can be set to limit the counting ceiling.
+func (r *SearchRequest) WithTrackTotalHits(track any) *SearchRequest {
+	r.TrackTotalHits = track
+	return r
+}
+
+// WithRouting sets the routing value(s)
+func (r *SearchRequest) WithRouting(routing ...string) *SearchRequest {
+	r.Routing = routing
 	return r
 }
 
@@ -124,6 +143,19 @@ func (sr SearchResponse) GetAggregationResultSource(name string) ([]byte, bool) 
 
 	aggSource, exists := sr.Aggregations[name]
 	return aggSource, exists
+}
+
+// Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
+func (sr SearchResponse) Keys() []string {
+	keys := make([]string, len(sr.Aggregations))
+
+	i := 0
+	for k := range sr.Aggregations {
+		keys[i] = k
+		i++
+	}
+
+	return keys
 }
 
 // Hits is a domain model union response type across all supported OpenSearch versions.
