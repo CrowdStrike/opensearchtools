@@ -53,9 +53,8 @@ type SingleValueMetricAggregation struct {
 	// Negative values will be omitted
 	PrecisionThreshold int
 
-	// Missing is used to define how documents missing are missing a value should be treated.
-	// For SingleValueMetricAggregations, Missing is the value that will be substituted in if
-	// the document does not contain the target Field
+	// Missing is used to define how documents missing the target Field.
+	// The value of Missing is substituted for the document.
 	Missing any
 }
 
@@ -115,6 +114,7 @@ func (s *SingleValueMetricAggregation) WithPrecisionThreshold(p int) *SingleValu
 	return s
 }
 
+// WithMissing value to use
 func (s *SingleValueMetricAggregation) WithMissing(missing any) *SingleValueMetricAggregation {
 	s.Missing = missing
 	return s
