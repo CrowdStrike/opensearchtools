@@ -2,7 +2,6 @@ package opensearchtools
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 // BucketSortAggregation is a [pipeline aggregation] that modifies its parent aggregation
@@ -60,7 +59,27 @@ func (b *BucketSortAggregation) AddSort(field string, isDesc bool) *BucketSortAg
 	return b
 }
 
+// Validate that the aggregation is executable.
+// Implements [Aggregation.Validate].
+func (b *BucketSortAggregation) Validate() ValidationResults {
+	vrs := NewValidationResults()
+
+	for _, s := range b.Sort {
+		if s.field == "" {
+			vrs.Add(NewValidationResult("sort missing target field", true))
+		}
+	}
+
+	return vrs
+}
+
+// ToOpenSearchJSON converts the BucketSortAggregation struct to the expected OpenSearch JSON.
+// Implements [Aggregation.ToOpenSearchJSON].
 func (b *BucketSortAggregation) ToOpenSearchJSON() ([]byte, error) {
+	if vrs := b.Validate(); vrs.IsFatal() {
+		return nil, NewValidationError(vrs)
+	}
+
 	ba := make(map[string]any)
 	if b.From >= 0 {
 		ba["from"] = b.From
@@ -74,10 +93,6 @@ func (b *BucketSortAggregation) ToOpenSearchJSON() ([]byte, error) {
 		sortSource := make([]any, len(b.Sort))
 
 		for i, s := range b.Sort {
-			if s.field == "" {
-				return nil, fmt.Errorf("sort missing target field")
-			}
-
 			order := "asc"
 			if s.desc {
 				order = "desc"

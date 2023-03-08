@@ -2,7 +2,6 @@ package opensearchtools
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 // DateRangeAggregation is conceptually the same as the [RangeAggregation],
@@ -82,14 +81,31 @@ func (dr *DateRangeAggregation) SubAggregations() map[string]Aggregation {
 	return dr.Aggregations
 }
 
-// ToOpenSearchJSON converts the DateRangeAggregation to the correct OpenSearch JSON.
-func (dr *DateRangeAggregation) ToOpenSearchJSON() ([]byte, error) {
+// Validate that the aggregation is executable.
+// Implements [Aggregation.Validate].
+func (dr *DateRangeAggregation) Validate() ValidationResults {
+	vrs := NewValidationResults()
+
 	if dr.Field == "" {
-		return nil, fmt.Errorf("a DateRangeAggregation requires a target field")
+		vrs.Add(NewValidationResult("a DateRangeAggregation requires a target field", true))
 	}
 
 	if len(dr.Ranges) == 0 {
-		return nil, fmt.Errorf("a DateRangeAggregation requires at least one range bucket")
+		vrs.Add(NewValidationResult("a DateRangeAggregation requires at least one range bucket", true))
+	}
+
+	for _, subAgg := range dr.Aggregations {
+		vrs.Extend(subAgg.Validate())
+	}
+
+	return vrs
+}
+
+// ToOpenSearchJSON converts the DateRangeAggregation to the correct OpenSearch JSON.
+// Implements [Aggregation.ToOpenSearchJSON].
+func (dr *DateRangeAggregation) ToOpenSearchJSON() ([]byte, error) {
+	if vrs := dr.Validate(); vrs.IsFatal() {
+		return nil, NewValidationError(vrs)
 	}
 
 	ra := map[string]any{

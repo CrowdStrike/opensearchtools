@@ -82,14 +82,31 @@ func (d *DateHistogramAggregation) SubAggregations() map[string]Aggregation {
 	return d.Aggregations
 }
 
-// ToOpenSearchJSON converts the TermsAggregation to the correct OpenSearch JSON.
-func (d *DateHistogramAggregation) ToOpenSearchJSON() ([]byte, error) {
+// Validate that the aggregation is executable.
+// Implements [Aggregation.Validate].
+func (d *DateHistogramAggregation) Validate() ValidationResults {
+	vrs := NewValidationResults()
+
 	if d.Field == "" {
-		return nil, fmt.Errorf("a DateHistogramAggregation requires a target field")
+		vrs.Add(NewValidationResult("a DateHistogramAggregation requires a target field", true))
 	}
 
 	if d.Interval == "" {
-		return nil, fmt.Errorf("a DateHistogramAggregation requires a interval")
+		vrs.Add(NewValidationResult("a DateHistogramAggregation requires a interval", true))
+	}
+
+	for _, subAgg := range d.Aggregations {
+		vrs.Extend(subAgg.Validate())
+	}
+
+	return vrs
+}
+
+// ToOpenSearchJSON converts the TermsAggregation to the correct OpenSearch JSON.
+// Implements [Aggregation.ToOpenSearchJSON].
+func (d *DateHistogramAggregation) ToOpenSearchJSON() ([]byte, error) {
+	if vrs := d.Validate(); vrs.IsFatal() {
+		return nil, NewValidationError(vrs)
 	}
 
 	da := map[string]any{

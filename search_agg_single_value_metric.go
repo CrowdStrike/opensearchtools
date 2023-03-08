@@ -110,40 +110,53 @@ func NewSumAggregation(field string) *SingleValueMetricAggregation {
 }
 
 // WithPrecisionThreshold sets the PrecisionThreshold
-func (c *SingleValueMetricAggregation) WithPrecisionThreshold(p int) *SingleValueMetricAggregation {
-	c.PrecisionThreshold = p
-	return c
+func (s *SingleValueMetricAggregation) WithPrecisionThreshold(p int) *SingleValueMetricAggregation {
+	s.PrecisionThreshold = p
+	return s
 }
 
-func (c *SingleValueMetricAggregation) WithMissing(missing any) *SingleValueMetricAggregation {
-	c.Missing = missing
-	return c
+func (s *SingleValueMetricAggregation) WithMissing(missing any) *SingleValueMetricAggregation {
+	s.Missing = missing
+	return s
+}
+
+// Validate that the aggregation is executable.
+// Implements [Aggregation.Validate].
+func (s *SingleValueMetricAggregation) Validate() ValidationResults {
+	vrs := NewValidationResults()
+
+	if s.Field == "" {
+		vrs.Add(NewValidationResult("a SingleValueMetricAggregation requires a target field", true))
+	}
+
+	if _, valid := validSingleValueAggTypes[s.Type]; !valid {
+		vrs.Add(NewValidationResult(fmt.Sprintf("%s is not a valid type of SingleValueMetricAggregation", s.Type), true))
+	}
+
+	return vrs
 }
 
 // ToOpenSearchJSON converts the SingleValueMetricAggregation to the correct OpenSearch JSON.
-func (c *SingleValueMetricAggregation) ToOpenSearchJSON() ([]byte, error) {
-	if c.Field == "" {
-		return nil, fmt.Errorf("a SingleValueMetricAggregation requires a target field")
-	}
-
-	if _, valid := validSingleValueAggTypes[c.Type]; !valid {
-		return nil, fmt.Errorf("%s is not a valid type of SingleValueMetricAggregation", c.Type)
+// Implements [Aggregation.ToOpenSearchJSON].
+func (s *SingleValueMetricAggregation) ToOpenSearchJSON() ([]byte, error) {
+	if vrs := s.Validate(); vrs.IsFatal() {
+		return nil, NewValidationError(vrs)
 	}
 
 	ca := map[string]any{
-		"field": c.Field,
+		"field": s.Field,
 	}
 
-	if c.PrecisionThreshold >= 0 {
-		ca["precision_threshold"] = c.PrecisionThreshold
+	if s.PrecisionThreshold >= 0 {
+		ca["precision_threshold"] = s.PrecisionThreshold
 	}
 
-	if c.Missing != nil {
-		ca["missing"] = c.Missing
+	if s.Missing != nil {
+		ca["missing"] = s.Missing
 	}
 
 	source := map[string]any{
-		string(c.Type): ca,
+		string(s.Type): ca,
 	}
 
 	return json.Marshal(source)

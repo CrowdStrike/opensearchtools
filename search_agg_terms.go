@@ -46,7 +46,7 @@ type TermsAggregation struct {
 	Aggregations map[string]Aggregation
 }
 
-// NewTermsAggregation instantiates a TermsAggregation targeting the provided field
+// NewTermsAggregation instantiates a TermsAggregation targeting the provided field.
 // Sets Size and MinDocCount to -1 to be omitted for the default value.
 func NewTermsAggregation(field string) *TermsAggregation {
 	return &TermsAggregation{
@@ -123,10 +123,35 @@ func (t *TermsAggregation) SubAggregations() map[string]Aggregation {
 	return t.Aggregations
 }
 
-// ToOpenSearchJSON converts the TermsAggregation to the correct OpenSearch JSON.
-func (t *TermsAggregation) ToOpenSearchJSON() ([]byte, error) {
+// Validate that the aggregation is executable.
+// Implements [Aggregation.Validate].
+func (t *TermsAggregation) Validate() ValidationResults {
+	vrs := NewValidationResults()
+
 	if t.Field == "" {
-		return nil, fmt.Errorf("a TermsAggregation requires a target field")
+		vrs.Add(NewValidationResult("a TermsAggregation requires a target field", true))
+	}
+
+	if t.Include != "" && len(t.IncludeValues) > 0 {
+		vrs.Add(NewValidationResult(fmt.Sprintf("terms agg cannot have both Include [%s] and IncludeValues [%v] set", t.Include, t.IncludeValues), true))
+	}
+
+	if t.Exclude != "" && len(t.ExcludeValues) > 0 {
+		vrs.Add(NewValidationResult(fmt.Sprintf("terms agg cannot have both Exclude [%s] and ExcludeValues [%v] set", t.Exclude, t.ExcludeValues), true))
+	}
+
+	for _, subAgg := range t.Aggregations {
+		vrs.Extend(subAgg.Validate())
+	}
+
+	return vrs
+}
+
+// ToOpenSearchJSON converts the TermsAggregation to the correct OpenSearch JSON.
+// Implements [Aggregation.ToOpenSearchJSON].
+func (t *TermsAggregation) ToOpenSearchJSON() ([]byte, error) {
+	if vrs := t.Validate(); vrs.IsFatal() {
+		return nil, NewValidationError(vrs)
 	}
 
 	ta := map[string]any{
@@ -151,22 +176,12 @@ func (t *TermsAggregation) ToOpenSearchJSON() ([]byte, error) {
 		ta["order"] = rawOrder
 	}
 
-	//TODO: PR Question - Should we validate like this? Or would it make sense to add `Validate() ValidationResults` to the aggregation interface.
-	// Then a SearchRequest could call Validate on all of the aggregations before marshaling. And we could leverage it at the beginning of this method.
-	if t.Include != "" && len(t.IncludeValues) > 0 {
-		return nil, fmt.Errorf("terms agg cannot have both Include [%s] and IncludeValues [%v] set", t.Include, t.IncludeValues)
-	}
-
 	if t.Include != "" {
 		ta["include"] = t.Include
 	}
 
 	if len(t.IncludeValues) > 0 {
 		ta["include"] = t.IncludeValues
-	}
-
-	if t.Exclude != "" && len(t.ExcludeValues) > 0 {
-		return nil, fmt.Errorf("terms agg cannot have both Exclude [%s] and ExcludeValues [%v] set", t.Exclude, t.ExcludeValues)
 	}
 
 	if t.Exclude != "" {

@@ -2,7 +2,6 @@ package opensearchtools
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 // PercentilesAggregation is the percentage of the data that’s at or below a
@@ -22,10 +21,23 @@ func NewPercentileAggregation(field string) *PercentilesAggregation {
 	}
 }
 
-// ToOpenSearchJSON converts the PercentilesAggregation to the correct OpenSearch JSON.
-func (p *PercentilesAggregation) ToOpenSearchJSON() ([]byte, error) {
+// Validate that the aggregation is executable.
+// Implements [Aggregation.Validate].
+func (p *PercentilesAggregation) Validate() ValidationResults {
+	vrs := NewValidationResults()
+
 	if p.Field == "" {
-		return nil, fmt.Errorf("a PercentilesAggregation requires a target field")
+		vrs.Add(NewValidationResult("a FilterAggregation requires a filter query", true))
+	}
+
+	return vrs
+}
+
+// ToOpenSearchJSON converts the PercentilesAggregation to the correct OpenSearch JSON.
+// Implements [Aggregation.ToOpenSearchJSON].
+func (p *PercentilesAggregation) ToOpenSearchJSON() ([]byte, error) {
+	if vrs := p.Validate(); vrs.IsFatal() {
+		return nil, NewValidationError(vrs)
 	}
 
 	source := map[string]any{

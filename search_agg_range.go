@@ -87,14 +87,31 @@ func (r *RangeAggregation) SubAggregations() map[string]Aggregation {
 	return r.Aggregations
 }
 
-// ToOpenSearchJSON converts the RangeAggregation to the correct OpenSearch JSON.
-func (r *RangeAggregation) ToOpenSearchJSON() ([]byte, error) {
+// Validate that the aggregation is executable.
+// Implements [Aggregation.Validate].
+func (r *RangeAggregation) Validate() ValidationResults {
+	vrs := NewValidationResults()
+
 	if r.Field == "" {
-		return nil, fmt.Errorf("a RangeAggregation requires a target field")
+		vrs.Add(NewValidationResult("a RangeAggregation requires a target field", true))
 	}
 
 	if len(r.Ranges) == 0 {
-		return nil, fmt.Errorf("a RangeAggregation requires at least one range bucket")
+		vrs.Add(NewValidationResult("a RangeAggregation requires at least one range bucket", true))
+	}
+
+	for _, subAgg := range r.Aggregations {
+		vrs.Extend(subAgg.Validate())
+	}
+
+	return vrs
+}
+
+// ToOpenSearchJSON converts the RangeAggregation to the correct OpenSearch JSON.
+// Implements [Aggregation.ToOpenSearchJSON].
+func (r *RangeAggregation) ToOpenSearchJSON() ([]byte, error) {
+	if vrs := r.Validate(); vrs.IsFatal() {
+		return nil, NewValidationError(vrs)
 	}
 
 	source := map[string]any{

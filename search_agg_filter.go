@@ -45,10 +45,27 @@ func (f *FilterAggregation) SubAggregations() map[string]Aggregation {
 	return f.Aggregations
 }
 
-// ToOpenSearchJSON converts the FilterAggregation to the correct OpenSearch JSON.
-func (f *FilterAggregation) ToOpenSearchJSON() ([]byte, error) {
+// Validate that the aggregation is executable.
+// Implements [Aggregation.Validate].
+func (f *FilterAggregation) Validate() ValidationResults {
+	vrs := NewValidationResults()
+
 	if f.Filter == nil {
-		return nil, fmt.Errorf("a FilterAggregation requires a filter query")
+		vrs.Add(NewValidationResult("a FilterAggregation requires a filter query", true))
+	}
+
+	for _, subAgg := range f.Aggregations {
+		vrs.Extend(subAgg.Validate())
+	}
+
+	return vrs
+}
+
+// ToOpenSearchJSON converts the FilterAggregation to the correct OpenSearch JSON.
+// Implements [Aggregation.ToOpenSearchJSON].
+func (f *FilterAggregation) ToOpenSearchJSON() ([]byte, error) {
+	if vrs := f.Validate(); vrs.IsFatal() {
+		return nil, NewValidationError(vrs)
 	}
 
 	filterJSON, filterErr := f.Filter.ToOpenSearchJSON()

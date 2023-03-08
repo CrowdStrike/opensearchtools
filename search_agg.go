@@ -9,6 +9,9 @@ import (
 type Aggregation interface {
 	// ToOpenSearchJSON converts the Aggregation struct to the expected OpenSearch JSON
 	ToOpenSearchJSON() ([]byte, error)
+
+	// Validate that the aggregation is executable
+	Validate() ValidationResults
 }
 
 // BucketAggregation represents a family of OpenSearch aggregations.
