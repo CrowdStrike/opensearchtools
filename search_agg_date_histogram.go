@@ -65,6 +65,7 @@ func (d *DateHistogramAggregation) AddOrder(orders ...Order) *DateHistogramAggre
 }
 
 // AddSubAggregation to the TermsAggregation with the provided name
+// Implements [BucketAggregation.AddSubAggregation]
 func (d *DateHistogramAggregation) AddSubAggregation(name string, agg Aggregation) BucketAggregation {
 	if d.Aggregations == nil {
 		d.Aggregations = map[string]Aggregation{name: agg}
@@ -75,20 +76,10 @@ func (d *DateHistogramAggregation) AddSubAggregation(name string, agg Aggregatio
 	return d
 }
 
-// ConvertSubAggregations uses the provided converter to convert all the sub aggregations in this TermsAggregation
-func (d *DateHistogramAggregation) ConvertSubAggregations(converter AggregateVersionConverter) (map[string]Aggregation, error) {
-	convertedAggs := make(map[string]Aggregation, len(d.Aggregations))
-
-	for name, agg := range d.Aggregations {
-		cAgg, err := converter(agg)
-		if err != nil {
-			return nil, err
-		}
-
-		convertedAggs[name] = cAgg
-	}
-
-	return convertedAggs, nil
+// SubAggregations returns all aggregations added to the bucket aggregation.
+// Implements [BucketAggregation.SubAggregations]
+func (d *DateHistogramAggregation) SubAggregations() map[string]Aggregation {
+	return d.Aggregations
 }
 
 // ToOpenSearchJSON converts the TermsAggregation to the correct OpenSearch JSON.

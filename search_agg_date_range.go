@@ -65,6 +65,7 @@ func (dr *DateRangeAggregation) WithFormat(format string) *DateRangeAggregation 
 }
 
 // AddSubAggregation to the DateRangeAggregation with the provided name
+// Implements [BucketAggregation.AddSubAggregation]
 func (dr *DateRangeAggregation) AddSubAggregation(name string, agg Aggregation) BucketAggregation {
 	if dr.Aggregations == nil {
 		dr.Aggregations = map[string]Aggregation{name: agg}
@@ -75,20 +76,10 @@ func (dr *DateRangeAggregation) AddSubAggregation(name string, agg Aggregation) 
 	return dr
 }
 
-// ConvertSubAggregations uses the provided converter to convert all the sub aggregations in this DateRangeAggregation
-func (dr *DateRangeAggregation) ConvertSubAggregations(converter AggregateVersionConverter) (map[string]Aggregation, error) {
-	convertedAggs := make(map[string]Aggregation, len(dr.Aggregations))
-
-	for name, agg := range dr.Aggregations {
-		cAgg, cErr := converter(agg)
-		if cErr != nil {
-			return nil, cErr
-		}
-
-		convertedAggs[name] = cAgg
-	}
-
-	return convertedAggs, nil
+// SubAggregations returns all aggregations added to the bucket aggregation.
+// Implements [BucketAggregation.SubAggregations]
+func (dr *DateRangeAggregation) SubAggregations() map[string]Aggregation {
+	return dr.Aggregations
 }
 
 // ToOpenSearchJSON converts the DateRangeAggregation to the correct OpenSearch JSON.

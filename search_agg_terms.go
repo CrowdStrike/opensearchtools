@@ -69,17 +69,6 @@ func (t *TermsAggregation) AddOrder(orders ...Order) *TermsAggregation {
 	return t
 }
 
-// AddSubAggregation to the TermsAggregation with the provided name
-func (t *TermsAggregation) AddSubAggregation(name string, agg Aggregation) BucketAggregation {
-	if t.Aggregations == nil {
-		t.Aggregations = map[string]Aggregation{name: agg}
-	} else {
-		t.Aggregations[name] = agg
-	}
-
-	return t
-}
-
 // WithMinDocCount the lower count threshold for a bucket to be included in the results
 func (t *TermsAggregation) WithMinDocCount(minCount int64) *TermsAggregation {
 	t.MinDocCount = minCount
@@ -116,20 +105,22 @@ func (t *TermsAggregation) WithExcludes(excludes []string) *TermsAggregation {
 	return t
 }
 
-// ConvertSubAggregations uses the provided converter to convert all the sub aggregations in this TermsAggregation
-func (t *TermsAggregation) ConvertSubAggregations(converter AggregateVersionConverter) (map[string]Aggregation, error) {
-	convertedAggs := make(map[string]Aggregation, len(t.Aggregations))
-
-	for name, agg := range t.Aggregations {
-		cAgg, cErr := converter(agg)
-		if cErr != nil {
-			return nil, cErr
-		}
-
-		convertedAggs[name] = cAgg
+// AddSubAggregation to the TermsAggregation with the provided name
+// Implements [BucketAggregation.AddSubAggregation]
+func (t *TermsAggregation) AddSubAggregation(name string, agg Aggregation) BucketAggregation {
+	if t.Aggregations == nil {
+		t.Aggregations = map[string]Aggregation{name: agg}
+	} else {
+		t.Aggregations[name] = agg
 	}
 
-	return convertedAggs, nil
+	return t
+}
+
+// SubAggregations returns all aggregations added to the bucket aggregation.
+// Implements [BucketAggregation.SubAggregations]
+func (t *TermsAggregation) SubAggregations() map[string]Aggregation {
+	return t.Aggregations
 }
 
 // ToOpenSearchJSON converts the TermsAggregation to the correct OpenSearch JSON.

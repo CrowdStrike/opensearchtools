@@ -22,9 +22,25 @@ type BucketAggregation interface {
 	// AddSubAggregation to the BucketAggregation for further refinement.
 	AddSubAggregation(name string, agg Aggregation) BucketAggregation
 
-	// ConvertSubAggregations uses the provided AggregateVersionConverter to convert all sub aggregations and return
-	// them as a map of agg name -> aggregation
-	ConvertSubAggregations(converter AggregateVersionConverter) (map[string]Aggregation, error)
+	// SubAggregations returns all aggregations added to the BucketAggregation
+	SubAggregations() map[string]Aggregation
+}
+
+// ConvertSubAggregations executes the AggregationVersionConverter against all sub aggregations for a BucketAggregation
+func ConvertSubAggregations(bucketAgg BucketAggregation, converter AggregateVersionConverter) (map[string]Aggregation, error) {
+	subAggs := bucketAgg.SubAggregations()
+	convertedAggs := make(map[string]Aggregation, len(subAggs))
+
+	for name, agg := range subAggs {
+		cAgg, err := converter(agg)
+		if err != nil {
+			return nil, err
+		}
+
+		convertedAggs[name] = cAgg
+	}
+
+	return convertedAggs, nil
 }
 
 // AggregateVersionConverter takes in a domain model Aggregation and makes any modifications or conversions needed for

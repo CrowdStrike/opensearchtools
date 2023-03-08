@@ -70,6 +70,7 @@ func (r *RangeAggregation) AddRanges(ranges ...Range) *RangeAggregation {
 }
 
 // AddSubAggregation to the RangeAggregation with the provided name
+// Implements [BucketAggregation.AddSubAggregation]
 func (r *RangeAggregation) AddSubAggregation(name string, agg Aggregation) BucketAggregation {
 	if r.Aggregations == nil {
 		r.Aggregations = map[string]Aggregation{name: agg}
@@ -80,20 +81,10 @@ func (r *RangeAggregation) AddSubAggregation(name string, agg Aggregation) Bucke
 	return r
 }
 
-// ConvertSubAggregations uses the provided converter to convert all the sub aggregations in this RangeAggregation
-func (r *RangeAggregation) ConvertSubAggregations(converter AggregateVersionConverter) (map[string]Aggregation, error) {
-	convertedAggs := make(map[string]Aggregation, len(r.Aggregations))
-
-	for name, agg := range r.Aggregations {
-		cAgg, cErr := converter(agg)
-		if cErr != nil {
-			return nil, cErr
-		}
-
-		convertedAggs[name] = cAgg
-	}
-
-	return convertedAggs, nil
+// SubAggregations returns all aggregations added to the bucket aggregation.
+// Implements [BucketAggregation.SubAggregations]
+func (r *RangeAggregation) SubAggregations() map[string]Aggregation {
+	return r.Aggregations
 }
 
 // ToOpenSearchJSON converts the RangeAggregation to the correct OpenSearch JSON.

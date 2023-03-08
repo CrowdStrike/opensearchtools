@@ -28,6 +28,7 @@ func NewFilterAggregation(filter Query) *FilterAggregation {
 }
 
 // AddSubAggregation to the FilterAggregation with the provided name
+// Implements [BucketAggregation.AddSubAggregation]
 func (f *FilterAggregation) AddSubAggregation(name string, agg Aggregation) BucketAggregation {
 	if f.Aggregations == nil {
 		f.Aggregations = map[string]Aggregation{name: agg}
@@ -38,20 +39,10 @@ func (f *FilterAggregation) AddSubAggregation(name string, agg Aggregation) Buck
 	return f
 }
 
-// ConvertSubAggregations uses the provided converter to convert all the sub aggregations in this FilterAggregation
-func (f *FilterAggregation) ConvertSubAggregations(converter AggregateVersionConverter) (map[string]Aggregation, error) {
-	convertedAggs := make(map[string]Aggregation, len(f.Aggregations))
-
-	for name, agg := range f.Aggregations {
-		cAgg, cErr := converter(agg)
-		if cErr != nil {
-			return nil, cErr
-		}
-
-		convertedAggs[name] = cAgg
-	}
-
-	return convertedAggs, nil
+// SubAggregations returns all aggregations added to the bucket aggregation.
+// Implements [BucketAggregation.SubAggregations]
+func (f *FilterAggregation) SubAggregations() map[string]Aggregation {
+	return f.Aggregations
 }
 
 // ToOpenSearchJSON converts the FilterAggregation to the correct OpenSearch JSON.
