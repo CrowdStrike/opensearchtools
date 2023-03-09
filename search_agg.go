@@ -2,7 +2,6 @@ package opensearchtools
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 // Aggregation wraps all aggregation types into a common interface.
@@ -10,6 +9,9 @@ import (
 type Aggregation interface {
 	// ToOpenSearchJSON converts the Aggregation struct to the expected OpenSearch JSON
 	ToOpenSearchJSON() ([]byte, error)
+
+	// Validate that the aggregation is executable
+	Validate() ValidationResults
 }
 
 // BucketAggregation represents a family of OpenSearch aggregations.
@@ -23,9 +25,25 @@ type BucketAggregation interface {
 	// AddSubAggregation to the BucketAggregation for further refinement.
 	AddSubAggregation(name string, agg Aggregation) BucketAggregation
 
-	// ConvertSubAggregations uses the provided AggregateVersionConverter to convert all sub aggregations and return
-	// them as a map of agg name -> aggregation
-	ConvertSubAggregations(converter AggregateVersionConverter) (map[string]Aggregation, error)
+	// SubAggregations returns all aggregations added to the BucketAggregation
+	SubAggregations() map[string]Aggregation
+}
+
+// ConvertSubAggregations executes the AggregationVersionConverter against all sub aggregations for a BucketAggregation
+func ConvertSubAggregations(bucketAgg BucketAggregation, converter AggregateVersionConverter) (map[string]Aggregation, error) {
+	subAggs := bucketAgg.SubAggregations()
+	convertedAggs := make(map[string]Aggregation, len(subAggs))
+
+	for name, agg := range subAggs {
+		cAgg, err := converter(agg)
+		if err != nil {
+			return nil, err
+		}
+
+		convertedAggs[name] = cAgg
+	}
+
+	return convertedAggs, nil
 }
 
 // AggregateVersionConverter takes in a domain model Aggregation and makes any modifications or conversions needed for
@@ -42,16 +60,20 @@ type AggregationResultSet interface {
 	// GetAggregationResultSource fetches the raw JSON source for the provided name.
 	// Returns nil, false if no aggregation response with the name exists.
 	GetAggregationResultSource(name string) ([]byte, bool)
+
+	// Keys returns a slice of keys for the list of sub aggregation results
+	Keys() []string
 }
 
 // ReadAggregationResult generically reads a sub bucket from a AggregationResultSet
-// and parses it into the passed aggregation response.
+// and parses it into the passed aggregation response. It returns an exists boolean, if the agg key is in the result set,
+// and an error if it failed to be read.
 // subAggResponse can be any pointer type.
-func ReadAggregationResult[A any, P PtrTo[A], R AggregationResultSet](name string, aggResponse R, subAggResponse P) error {
+func ReadAggregationResult[A any, P PtrTo[A], R AggregationResultSet](name string, aggResponse R, subAggResponse P) (error, bool) {
 	subAggSource, exists := aggResponse.GetAggregationResultSource(name)
 	if !exists {
-		return fmt.Errorf("no sub aggregation response with name %s", name)
+		return nil, false
 	}
 
-	return json.Unmarshal(subAggSource, subAggResponse)
+	return json.Unmarshal(subAggSource, subAggResponse), true
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/opensearch-project/opensearch-go/v2"
 	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
+	"golang.org/x/exp/maps"
 
 	"github.com/CrowdStrike/opensearchtools"
 )
@@ -32,6 +33,12 @@ type SearchRequest struct {
 
 	// Sort(s) to order the results returned
 	Sort []opensearchtools.Sort
+
+	// TrackTotalHits - whether to return how many documents matched the query.
+	TrackTotalHits any
+
+	// Routing - Value(s) used to route the update by query operation to a specific shard
+	Routing []string
 
 	// Aggregations to be performed on the results of the Query
 	Aggregations map[string]opensearchtools.Aggregation
@@ -147,6 +154,19 @@ func (r *SearchRequest) WithQuery(q opensearchtools.Query) *SearchRequest {
 	return r
 }
 
+// WithTrackTotalHits if set to true it will count all documents,
+// otherwise a number can be set to limit the counting ceiling.
+func (r *SearchRequest) WithTrackTotalHits(track any) *SearchRequest {
+	r.TrackTotalHits = track
+	return r
+}
+
+// WithRouting sets the routing value(s).
+func (r *SearchRequest) WithRouting(routing ...string) *SearchRequest {
+	r.Routing = routing
+	return r
+}
+
 // fromDomainSearchRequest creates a new SearchRequest from the given [opensearchtools.SearchRequest]
 func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest, opensearchtools.ValidationResults) {
 	vrs := opensearchtools.NewValidationResults()
@@ -183,6 +203,8 @@ func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest,
 	searchRequest.Sort = req.Sort
 	searchRequest.Query = query
 	searchRequest.Aggregations = aggs
+	searchRequest.TrackTotalHits = req.TrackTotalHits
+	searchRequest.Routing = req.Routing
 
 	return searchRequest, vrs
 }
@@ -208,8 +230,10 @@ func (r *SearchRequest) Do(ctx context.Context, client *opensearch.Client) (*ope
 	}
 
 	osResp, rErr := opensearchapi.SearchRequest{
-		Index: r.Index,
-		Body:  bytes.NewReader(bodyBytes),
+		Index:          r.Index,
+		Body:           bytes.NewReader(bodyBytes),
+		TrackTotalHits: r.TrackTotalHits,
+		Routing:        r.Routing,
 	}.Do(ctx, client)
 
 	if rErr != nil {
@@ -254,6 +278,11 @@ func (sr *SearchResponse) GetAggregationResultSource(name string) ([]byte, bool)
 
 	aggSource, exists := sr.Aggregations[name]
 	return aggSource, exists
+}
+
+// Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
+func (sr *SearchResponse) Keys() []string {
+	return maps.Keys(sr.Aggregations)
 }
 
 // toDomain converts this instance of a [SearchResponse] into an [opensearchtools.SearchResponse].

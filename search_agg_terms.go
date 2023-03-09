@@ -3,12 +3,13 @@ package opensearchtools
 import (
 	"encoding/json"
 	"fmt"
+
+	"golang.org/x/exp/maps"
 )
 
 // TermsAggregation dynamically creates a bucket for each unique term of a field.
-// An empty TermsAggregation will have two issues with execution:
-//
-//   - the target Field must be non-null and non-empty.
+// An empty TermsAggregation will have some issues with execution:
+//   - the target Field must be non-nil and non-empty.
 //   - a Size of 0 will return no buckets
 //
 // For more details see https://opensearch.org/docs/latest/opensearch/bucket-agg/
@@ -19,6 +20,27 @@ type TermsAggregation struct {
 	// Size of the number of buckets to be returned. Negative sizes will be omitted
 	Size int
 
+	// MinDocCount is the lower count threshold for a bucket to be included in the results.
+	// Negative counts will be omitted
+	MinDocCount int64
+
+	// Missing counts documents that are missing the field being aggregated
+	Missing string
+
+	// Include filters values based on a regexp, Include cannot be used in tandem with IncludeValues
+	Include string
+
+	// IncludeValues filters values base on a list of exact matches,
+	// IncludeValues cannot be used in tandem with Include
+	IncludeValues []string
+
+	// Exclude filters values based on a regexp, Exclude cannot be used in tandem with ExcludeValues
+	Exclude string
+
+	// ExcludeValues filters values base on a list of exact matches,
+	// ExcludeValues cannot be used in tandem with Exclude
+	ExcludeValues []string
+
 	// Order list of [Order]s to sort the aggregation buckets. Default order is _count: desc
 	Order []Order
 
@@ -26,12 +48,13 @@ type TermsAggregation struct {
 	Aggregations map[string]Aggregation
 }
 
-// NewTermsAggregation instantiates a TermsAggregation targeting the provided field
-// and sets the Size to -1 to be omitted for the default value.
+// NewTermsAggregation instantiates a TermsAggregation targeting the provided field.
+// Sets Size and MinDocCount to -1 to be omitted for the default value.
 func NewTermsAggregation(field string) *TermsAggregation {
 	return &TermsAggregation{
 		Field:        field,
 		Size:         -1,
+		MinDocCount:  -1,
 		Aggregations: make(map[string]Aggregation),
 	}
 }
@@ -48,7 +71,44 @@ func (t *TermsAggregation) AddOrder(orders ...Order) *TermsAggregation {
 	return t
 }
 
+// WithMinDocCount the lower count threshold for a bucket to be included in the results
+func (t *TermsAggregation) WithMinDocCount(minCount int64) *TermsAggregation {
+	t.MinDocCount = minCount
+	return t
+}
+
+// WithMissing buckets documents missing the field under the provided label
+func (t *TermsAggregation) WithMissing(missing string) *TermsAggregation {
+	t.Missing = missing
+	return t
+}
+
+// WithInclude sets the regex include filter
+func (t *TermsAggregation) WithInclude(include string) *TermsAggregation {
+	t.Include = include
+	return t
+}
+
+// WithIncludes sets the list of include matches
+func (t *TermsAggregation) WithIncludes(include []string) *TermsAggregation {
+	t.IncludeValues = include
+	return t
+}
+
+// WithExclude sets the regex exclude filter
+func (t *TermsAggregation) WithExclude(exclude string) *TermsAggregation {
+	t.Exclude = exclude
+	return t
+}
+
+// WithExcludes sets the list of Exclude matches
+func (t *TermsAggregation) WithExcludes(excludes []string) *TermsAggregation {
+	t.ExcludeValues = excludes
+	return t
+}
+
 // AddSubAggregation to the TermsAggregation with the provided name
+// Implements [BucketAggregation.AddSubAggregation]
 func (t *TermsAggregation) AddSubAggregation(name string, agg Aggregation) BucketAggregation {
 	if t.Aggregations == nil {
 		t.Aggregations = map[string]Aggregation{name: agg}
@@ -59,26 +119,41 @@ func (t *TermsAggregation) AddSubAggregation(name string, agg Aggregation) Bucke
 	return t
 }
 
-// ConvertSubAggregations uses the provided converter to convert all the sub aggregations in this TermsAggregation
-func (t *TermsAggregation) ConvertSubAggregations(converter AggregateVersionConverter) (map[string]Aggregation, error) {
-	convertedAggs := make(map[string]Aggregation, len(t.Aggregations))
+// SubAggregations returns all aggregations added to the bucket aggregation.
+// Implements [BucketAggregation.SubAggregations]
+func (t *TermsAggregation) SubAggregations() map[string]Aggregation {
+	return t.Aggregations
+}
 
-	for name, agg := range t.Aggregations {
-		cAgg, cErr := converter(agg)
-		if cErr != nil {
-			return nil, cErr
-		}
+// Validate that the aggregation is executable.
+// Implements [Aggregation.Validate].
+func (t *TermsAggregation) Validate() ValidationResults {
+	vrs := NewValidationResults()
 
-		convertedAggs[name] = cAgg
+	if t.Field == "" {
+		vrs.Add(NewValidationResult("a TermsAggregation requires a target field", true))
 	}
 
-	return convertedAggs, nil
+	if t.Include != "" && len(t.IncludeValues) > 0 {
+		vrs.Add(NewValidationResult(fmt.Sprintf("terms agg cannot have both Include [%s] and IncludeValues [%v] set", t.Include, t.IncludeValues), true))
+	}
+
+	if t.Exclude != "" && len(t.ExcludeValues) > 0 {
+		vrs.Add(NewValidationResult(fmt.Sprintf("terms agg cannot have both Exclude [%s] and ExcludeValues [%v] set", t.Exclude, t.ExcludeValues), true))
+	}
+
+	for _, subAgg := range t.Aggregations {
+		vrs.Extend(subAgg.Validate())
+	}
+
+	return vrs
 }
 
 // ToOpenSearchJSON converts the TermsAggregation to the correct OpenSearch JSON.
+// Implements [Aggregation.ToOpenSearchJSON].
 func (t *TermsAggregation) ToOpenSearchJSON() ([]byte, error) {
-	if t.Field == "" {
-		return nil, fmt.Errorf("a TermsAggregation requires a target field")
+	if vrs := t.Validate(); vrs.IsFatal() {
+		return nil, NewValidationError(vrs)
 	}
 
 	ta := map[string]any{
@@ -103,6 +178,30 @@ func (t *TermsAggregation) ToOpenSearchJSON() ([]byte, error) {
 		ta["order"] = rawOrder
 	}
 
+	if t.Include != "" {
+		ta["include"] = t.Include
+	}
+
+	if len(t.IncludeValues) > 0 {
+		ta["include"] = t.IncludeValues
+	}
+
+	if t.Exclude != "" {
+		ta["exclude"] = t.Exclude
+	}
+
+	if len(t.ExcludeValues) > 0 {
+		ta["exclude"] = t.ExcludeValues
+	}
+
+	if t.MinDocCount >= 0 {
+		ta["min_doc_count"] = t.MinDocCount
+	}
+
+	if t.Missing != "" {
+		ta["missing"] = t.Missing
+	}
+
 	source := map[string]any{
 		"terms": ta,
 	}
@@ -124,16 +223,16 @@ func (t *TermsAggregation) ToOpenSearchJSON() ([]byte, error) {
 	return json.Marshal(source)
 }
 
-// TermsAggregationResult represents the results from a terms aggregation request.
-type TermsAggregationResult struct {
-	DocCountErrorUpperBound uint64
-	SumOtherDocCount        uint64
+// TermsAggregationResults represents the results from a terms aggregation request.
+type TermsAggregationResults struct {
+	DocCountErrorUpperBound int64
+	SumOtherDocCount        int64
 	Buckets                 []TermBucketResult
 }
 
-// UnmarshalJSON implements [json.Unmarshaler] to decode a json byte slice into a TermsAggregationResult
-// Ignores unknown fields.
-func (t *TermsAggregationResult) UnmarshalJSON(m []byte) error {
+// UnmarshalJSON implements [json.Unmarshaler] to decode a json byte slice into a TermsAggregationResults
+// Errors on unknown fields.
+func (t *TermsAggregationResults) UnmarshalJSON(m []byte) error {
 	// map[key] -> value
 	var rawResp map[string]json.RawMessage
 	if err := json.Unmarshal(m, &rawResp); err != nil {
@@ -141,7 +240,7 @@ func (t *TermsAggregationResult) UnmarshalJSON(m []byte) error {
 	}
 
 	if t == nil {
-		return fmt.Errorf("invalid TermsAggregationResult target, nil")
+		return fmt.Errorf("invalid TermsAggregationResults target, nil")
 	}
 
 	for key, value := range rawResp {
@@ -159,7 +258,7 @@ func (t *TermsAggregationResult) UnmarshalJSON(m []byte) error {
 				return err
 			}
 		default:
-			return fmt.Errorf("unknown TermsAggregationResult field %s", key)
+			return fmt.Errorf("unknown TermsAggregationResults field %s", key)
 		}
 	}
 
@@ -169,7 +268,7 @@ func (t *TermsAggregationResult) UnmarshalJSON(m []byte) error {
 // TermBucketResult is a [AggregationResultMap] for a TermsAggregation
 type TermBucketResult struct {
 	Key                   string
-	DocCount              uint64
+	DocCount              int64
 	SubAggregationResults map[string]json.RawMessage
 }
 
@@ -214,4 +313,9 @@ func (t *TermBucketResult) GetAggregationResultSource(name string) ([]byte, bool
 
 	subAggSource, exists := t.SubAggregationResults[name]
 	return subAggSource, exists
+}
+
+// Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
+func (t *TermBucketResult) Keys() []string {
+	return maps.Keys(t.SubAggregationResults)
 }

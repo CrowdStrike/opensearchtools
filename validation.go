@@ -59,7 +59,7 @@ func (vrs *ValidationResults) Add(vr ValidationResult) {
 	vrs.validationResults[vr] = struct{}{}
 }
 
-// Add either adds the given [ValidationResult] to the set or does not if it already exists in the set
+// Extend either adds the given [ValidationResult] to the set or does not if it already exists in the set
 func (vrs *ValidationResults) Extend(other ValidationResults) {
 	if vrs.validationResults == nil {
 		vrs.validationResults = map[ValidationResult]struct{}{}
