@@ -53,7 +53,7 @@ type SingleValueMetricAggregation struct {
 	// Negative values will be omitted
 	PrecisionThreshold int
 
-	// Missing is used to define how documents missing the target Field.
+	// Missing is used to define how documents missing the target field should be treated.
 	// The value of Missing is substituted for the document.
 	Missing any
 }
