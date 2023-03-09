@@ -28,8 +28,8 @@ type BulkRequest struct {
 	Index string
 }
 
-// fromDomainBulkRequest creates a new [BulkRequest] from the given [opensearchtools.BulkRequest/.
-func fromDomainBulkRequest(req *opensearchtools.BulkRequest) (BulkRequest, opensearchtools.ValidationResults) {
+// FromDomainBulkRequest creates a new [BulkRequest] from the given [opensearchtools.BulkRequest/.
+func FromDomainBulkRequest(req *opensearchtools.BulkRequest) (BulkRequest, opensearchtools.ValidationResults) {
 	// As more versions are implemented, these [opensearchtools.ValidationResults] may be used to contain issues
 	// converting from the domain model to the V2 model.
 	var vrs opensearchtools.ValidationResults

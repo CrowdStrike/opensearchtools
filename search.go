@@ -12,7 +12,7 @@ import (
 //
 // [Search]: https://opensearch.org/docs/latest/api-reference/search/
 type Search interface {
-	Search(ctx context.Context, req *SearchRequest) (OpenSearchResponse[*SearchResponse], error)
+	Search(ctx context.Context, req *SearchRequest) (OpenSearchResponse[SearchResponse], error)
 }
 
 // SearchRequest is a domain model union type for all the fields of a Search request across

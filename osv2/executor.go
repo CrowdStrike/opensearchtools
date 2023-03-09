@@ -29,7 +29,7 @@ func NewExecutor(client *opensearch.Client) *Executor {
 //   - The request to OpenSearch fails
 //   - The results JSON cannot be unmarshalled
 func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.MGetResponse], err error) {
-	osv2Req, vrs := fromDomainMGetRequest(req)
+	osv2Req, vrs := FromDomainMGetRequest(req)
 	resp.ValidationResults.Extend(vrs)
 	if vrs.IsFatal() {
 		return resp, opensearchtools.NewValidationError(vrs)
@@ -55,7 +55,7 @@ func (e *Executor) MGet(ctx context.Context, req *opensearchtools.MGetRequest) (
 //   - The request to OpenSearch fails
 //   - The results JSON cannot be unmarshalled
 func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.SearchResponse], err error) {
-	osv2Req, vrs := fromDomainSearchRequest(req)
+	osv2Req, vrs := FromDomainSearchRequest(req)
 	resp.ValidationResults.Extend(vrs)
 	if vrs.IsFatal() {
 		return resp, opensearchtools.NewValidationError(vrs)
@@ -81,7 +81,7 @@ func (e *Executor) Search(ctx context.Context, req *opensearchtools.SearchReques
 //   - The request to OpenSearch fails
 //   - The results json cannot be unmarshalled
 func (e *Executor) Bulk(ctx context.Context, req *opensearchtools.BulkRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.BulkResponse], err error) {
-	osv2Req, vrs := fromDomainBulkRequest(req)
+	osv2Req, vrs := FromDomainBulkRequest(req)
 	resp.ValidationResults.Extend(vrs)
 
 	if vrs.IsFatal() {

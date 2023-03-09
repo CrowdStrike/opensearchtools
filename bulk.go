@@ -9,7 +9,7 @@ import (
 //
 // [Bulk]: https://opensearch.org/docs/latest/api-reference/document-apis/bulk/
 type Bulk interface {
-	Bulk(ctx context.Context, req *BulkRequest) (*OpenSearchResponse[BulkResponse], error)
+	Bulk(ctx context.Context, req *BulkRequest) (OpenSearchResponse[BulkResponse], error)
 }
 
 // BulkRequest is a domain model union type for all the fields of BulkRequests for all

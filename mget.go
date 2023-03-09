@@ -10,7 +10,7 @@ import (
 //
 // [Multi-get]: https://opensearch.org/docs/latest/api-reference/document-apis/multi-get/
 type MGet interface {
-	MGet(ctx context.Context, req *MGetRequest) (*MGetResponse, error)
+	MGet(ctx context.Context, req *MGetRequest) (OpenSearchResponse[MGetResponse], error)
 }
 
 // MGetRequest is a domain model union type for all the fields of a Multi-Get request for all
