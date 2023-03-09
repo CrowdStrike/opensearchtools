@@ -3,6 +3,8 @@ package opensearchtools
 import (
 	"encoding/json"
 	"fmt"
+
+	"golang.org/x/exp/maps"
 )
 
 // RangeAggregation lets you manually define each bucket, and it's range.
@@ -232,13 +234,5 @@ func (r *RangeBucketResult) GetAggregationResultSource(name string) ([]byte, boo
 
 // Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
 func (r *RangeBucketResult) Keys() []string {
-	keys := make([]string, len(r.SubAggregationResults))
-
-	i := 0
-	for k := range r.SubAggregationResults {
-		keys[i] = k
-		i++
-	}
-
-	return keys
+	return maps.Keys(r.SubAggregationResults)
 }

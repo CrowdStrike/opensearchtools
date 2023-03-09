@@ -3,6 +3,8 @@ package opensearchtools
 import (
 	"encoding/json"
 	"fmt"
+
+	"golang.org/x/exp/maps"
 )
 
 // DateHistogramAggregation buckets documents based on a date interval.
@@ -245,13 +247,5 @@ func (d *DateHistogramBucketResult) GetAggregationResultSource(name string) ([]b
 
 // Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
 func (d *DateHistogramBucketResult) Keys() []string {
-	keys := make([]string, len(d.SubAggregationResults))
-
-	i := 0
-	for k := range d.SubAggregationResults {
-		keys[i] = k
-		i++
-	}
-
-	return keys
+	return maps.Keys(d.SubAggregationResults)
 }

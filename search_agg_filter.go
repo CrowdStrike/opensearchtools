@@ -3,6 +3,8 @@ package opensearchtools
 import (
 	"encoding/json"
 	"fmt"
+
+	"golang.org/x/exp/maps"
 )
 
 // FilterAggregation is a query clause, exactly like a search query.
@@ -142,13 +144,5 @@ func (f *FilterAggregationResults) GetAggregationResultSource(name string) ([]by
 
 // Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
 func (f *FilterAggregationResults) Keys() []string {
-	keys := make([]string, len(f.SubAggregationResults))
-
-	i := 0
-	for k := range f.SubAggregationResults {
-		keys[i] = k
-		i++
-	}
-
-	return keys
+	return maps.Keys(f.SubAggregationResults)
 }

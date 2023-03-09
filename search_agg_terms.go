@@ -3,6 +3,8 @@ package opensearchtools
 import (
 	"encoding/json"
 	"fmt"
+
+	"golang.org/x/exp/maps"
 )
 
 // TermsAggregation dynamically creates a bucket for each unique term of a field.
@@ -315,13 +317,5 @@ func (t *TermBucketResult) GetAggregationResultSource(name string) ([]byte, bool
 
 // Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
 func (t *TermBucketResult) Keys() []string {
-	keys := make([]string, len(t.SubAggregationResults))
-
-	i := 0
-	for k := range t.SubAggregationResults {
-		keys[i] = k
-		i++
-	}
-
-	return keys
+	return maps.Keys(t.SubAggregationResults)
 }

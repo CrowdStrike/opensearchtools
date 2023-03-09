@@ -3,6 +3,8 @@ package opensearchtools
 import (
 	"context"
 	"encoding/json"
+
+	"golang.org/x/exp/maps"
 )
 
 // Search defines a method which knows how to make an OpenSearch [Search] request.
@@ -147,15 +149,7 @@ func (sr SearchResponse) GetAggregationResultSource(name string) ([]byte, bool) 
 
 // Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
 func (sr SearchResponse) Keys() []string {
-	keys := make([]string, len(sr.Aggregations))
-
-	i := 0
-	for k := range sr.Aggregations {
-		keys[i] = k
-		i++
-	}
-
-	return keys
+	return maps.Keys(sr.Aggregations)
 }
 
 // Hits is a domain model union response type across all supported OpenSearch versions.

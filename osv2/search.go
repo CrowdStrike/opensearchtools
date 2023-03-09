@@ -7,6 +7,7 @@ import (
 
 	"github.com/opensearch-project/opensearch-go/v2"
 	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
+	"golang.org/x/exp/maps"
 
 	"github.com/CrowdStrike/opensearchtools"
 )
@@ -281,15 +282,7 @@ func (sr *SearchResponse) GetAggregationResultSource(name string) ([]byte, bool)
 
 // Keys implemented for [opensearchtools.AggregationResultSet] to return the list of aggregation result keys
 func (sr *SearchResponse) Keys() []string {
-	keys := make([]string, len(sr.Aggregations))
-
-	i := 0
-	for k := range sr.Aggregations {
-		keys[i] = k
-		i++
-	}
-
-	return keys
+	return maps.Keys(sr.Aggregations)
 }
 
 // toDomain converts this instance of a [SearchResponse] into an [opensearchtools.SearchResponse].
