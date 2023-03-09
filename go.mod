@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/opensearch-project/opensearch-go/v2 v2.2.0
 	github.com/stretchr/testify v1.8.1
+	golang.org/x/exp v0.0.0-20230307190834-24139beb5833
 )
 
 require (
