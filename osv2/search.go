@@ -167,8 +167,8 @@ func (r *SearchRequest) WithRouting(routing ...string) *SearchRequest {
 	return r
 }
 
-// fromDomainSearchRequest creates a new SearchRequest from the given [opensearchtools.SearchRequest]
-func fromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest, opensearchtools.ValidationResults) {
+// FromDomainSearchRequest creates a new SearchRequest from the given [opensearchtools.SearchRequest]
+func FromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest, opensearchtools.ValidationResults) {
 	vrs := opensearchtools.NewValidationResults()
 	var (
 		searchRequest SearchRequest

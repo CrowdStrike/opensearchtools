@@ -101,8 +101,8 @@ func (m *MGetRequest) Do(ctx context.Context, client *opensearch.Client) (*opens
 	return &resp, nil
 }
 
-// fromDomainMGetRequest creates a new [MGetRequest] from the given [opensearchtools.MGetRequest].
-func fromDomainMGetRequest(req *opensearchtools.MGetRequest) (MGetRequest, opensearchtools.ValidationResults) {
+// FromDomainMGetRequest creates a new [MGetRequest] from the given [opensearchtools.MGetRequest].
+func FromDomainMGetRequest(req *opensearchtools.MGetRequest) (MGetRequest, opensearchtools.ValidationResults) {
 	return MGetRequest{
 		Index: req.Index,
 		Docs:  req.Docs,
