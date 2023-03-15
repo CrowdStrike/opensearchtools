@@ -182,7 +182,7 @@ func (r *RangeBucketResult) UnmarshalJSON(m []byte) error {
 	}
 
 	if r == nil {
-		return fmt.Errorf("invalid TermBucketResult target, nil")
+		return fmt.Errorf("invalid RangeBucketResult target, nil")
 	}
 
 	r.SubAggregationResults = make(map[string]json.RawMessage)
