@@ -91,16 +91,6 @@ func TestPercentileAggregationResult_UnmarshalJSON(t *testing.T) {
 			rawJSON: []byte(`{"values":{"1.0":null,"5.0":null,"25.0":null,"50.0":null,"75.0":null,"95.0":null,"99.0":null}}`),
 			want:    PercentilesAggregationResult{},
 		},
-		{
-			name:    "Missing values",
-			rawJSON: []byte("{}"),
-			wantErr: true,
-		},
-		{
-			name:    "unknown values field",
-			rawJSON: []byte(`{"values":{"field": "val"}}`),
-			wantErr: true,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

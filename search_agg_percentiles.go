@@ -71,9 +71,28 @@ type PercentilesAggregationResult struct {
 
 // UnmarshalJSON implements [json.Unmarshaler] to decode a json byte slice into a PercentilesAggregationResult
 func (p *PercentilesAggregationResult) UnmarshalJSON(b []byte) error {
-	// map[key] -> value
-	var rawResp map[string]json.RawMessage
-	if err := json.Unmarshal(b, &rawResp); err != nil {
+	type valuesJSON struct {
+		Values struct {
+			P1        *float64 `json:"1.0,omitempty"`
+			P1String  string   `json:"1.0_as_string,omitempty"`
+			P5        *float64 `json:"5.0,omitempty"`
+			P5String  string   `json:"5.0_as_string,omitempty"`
+			P25       *float64 `json:"25.0,omitempty"`
+			P25String string   `json:"25.0_as_string,omitempty"`
+			P50       *float64 `json:"50.0,omitempty"`
+			P50String string   `json:"50.0_as_string,omitempty"`
+			P75       *float64 `json:"75.0,omitempty"`
+			P75String string   `json:"75.0_as_string,omitempty"`
+			P95       *float64 `json:"95.0,omitempty"`
+			P95String string   `json:"95.0_as_string,omitempty"`
+			P99       *float64 `json:"99.0,omitempty"`
+			P99String string   `json:"99.0_as_string,omitempty"`
+		}
+	}
+
+	var values valuesJSON
+
+	if err := json.Unmarshal(b, &values); err != nil {
 		return err
 	}
 
@@ -81,78 +100,20 @@ func (p *PercentilesAggregationResult) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("invalid PercentilesAggregationResult target, nil")
 	}
 
-	valueMessage, ok := rawResp["values"]
-	if !ok {
-		return fmt.Errorf("PercentilesAggretgationResult missing expected value entry")
-	}
-
-	var rawValues map[string]json.RawMessage
-	if err := json.Unmarshal(valueMessage, &rawValues); err != nil {
-		return err
-	}
-
-	for key, value := range rawValues {
-		switch key {
-		case "1.0":
-			if err := json.Unmarshal(value, &p.P1); err != nil {
-				return err
-			}
-		case "1.0_as_string":
-			if err := json.Unmarshal(value, &p.P1String); err != nil {
-				return err
-			}
-		case "5.0":
-			if err := json.Unmarshal(value, &p.P5); err != nil {
-				return err
-			}
-		case "5.0_as_string":
-			if err := json.Unmarshal(value, &p.P5String); err != nil {
-				return err
-			}
-		case "25.0":
-			if err := json.Unmarshal(value, &p.P25); err != nil {
-				return err
-			}
-		case "25.0_as_string":
-			if err := json.Unmarshal(value, &p.P25String); err != nil {
-				return err
-			}
-		case "50.0":
-			if err := json.Unmarshal(value, &p.P50); err != nil {
-				return err
-			}
-		case "50.0_as_string":
-			if err := json.Unmarshal(value, &p.P50String); err != nil {
-				return err
-			}
-		case "75.0":
-			if err := json.Unmarshal(value, &p.P75); err != nil {
-				return err
-			}
-		case "75.0_as_string":
-			if err := json.Unmarshal(value, &p.P75String); err != nil {
-				return err
-			}
-		case "95.0":
-			if err := json.Unmarshal(value, &p.P95); err != nil {
-				return err
-			}
-		case "95.0_as_string":
-			if err := json.Unmarshal(value, &p.P95String); err != nil {
-				return err
-			}
-		case "99.0":
-			if err := json.Unmarshal(value, &p.P99); err != nil {
-				return err
-			}
-		case "99.0_as_string":
-			if err := json.Unmarshal(value, &p.P99String); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unexpected field %s", key)
-		}
-	}
+	p.P1 = values.Values.P1
+	p.P1String = values.Values.P1String
+	p.P5 = values.Values.P5
+	p.P5String = values.Values.P5String
+	p.P25 = values.Values.P25
+	p.P25String = values.Values.P25String
+	p.P50 = values.Values.P50
+	p.P50String = values.Values.P50String
+	p.P75 = values.Values.P75
+	p.P75String = values.Values.P75String
+	p.P95 = values.Values.P95
+	p.P95String = values.Values.P95String
+	p.P99 = values.Values.P99
+	p.P99String = values.Values.P99String
 
 	return nil
 }
