@@ -51,6 +51,11 @@ func (vrs *ValidationResults) IsFatal() bool {
 	return false
 }
 
+// Len returns the number of [ValidationResult]s in the current set
+func (vrs *ValidationResults) Len() int {
+	return len(vrs.validationResults)
+}
+
 // Add either adds the given [ValidationResult] to the set or does not if it already exists in the set
 func (vrs *ValidationResults) Add(vr ValidationResult) {
 	if vrs.validationResults == nil {
