@@ -100,6 +100,7 @@ func (p *PercentilesAggregationResult) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	// can assign values.Values directly to p since they have the exact same fields
 	*p = PercentilesAggregationResult(values.Values)
 
 	return nil
