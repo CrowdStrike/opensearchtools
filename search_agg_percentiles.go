@@ -71,6 +71,10 @@ type PercentilesAggregationResult struct {
 
 // UnmarshalJSON implements [json.Unmarshaler] to decode a json byte slice into a PercentilesAggregationResult
 func (p *PercentilesAggregationResult) UnmarshalJSON(b []byte) error {
+	if p == nil {
+		return fmt.Errorf("invalid PercentilesAggregationResult target, nil")
+	}
+
 	type valuesJSON struct {
 		Values struct {
 			P1        *float64 `json:"1.0,omitempty"`
@@ -87,7 +91,7 @@ func (p *PercentilesAggregationResult) UnmarshalJSON(b []byte) error {
 			P95String string   `json:"95.0_as_string,omitempty"`
 			P99       *float64 `json:"99.0,omitempty"`
 			P99String string   `json:"99.0_as_string,omitempty"`
-		}
+		} `json:"values"`
 	}
 
 	var values valuesJSON
@@ -96,24 +100,7 @@ func (p *PercentilesAggregationResult) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	if p == nil {
-		return fmt.Errorf("invalid PercentilesAggregationResult target, nil")
-	}
-
-	p.P1 = values.Values.P1
-	p.P1String = values.Values.P1String
-	p.P5 = values.Values.P5
-	p.P5String = values.Values.P5String
-	p.P25 = values.Values.P25
-	p.P25String = values.Values.P25String
-	p.P50 = values.Values.P50
-	p.P50String = values.Values.P50String
-	p.P75 = values.Values.P75
-	p.P75String = values.Values.P75String
-	p.P95 = values.Values.P95
-	p.P95String = values.Values.P95String
-	p.P99 = values.Values.P99
-	p.P99String = values.Values.P99String
+	*p = PercentilesAggregationResult(values.Values)
 
 	return nil
 }
