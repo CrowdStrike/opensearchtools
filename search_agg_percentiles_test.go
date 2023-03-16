@@ -35,7 +35,7 @@ func TestPercentileAggregation_ToOpenSearchJSON(t *testing.T) {
 			}
 
 			if err != nil {
-				require.Nilf(t, got, "if an error is returned, no results are expected")
+				require.Nilf(t, got, "if an error is returned, no values are expected")
 			} else {
 				require.JSONEq(t, tt.want, string(got))
 			}
@@ -48,13 +48,13 @@ func TestPercentileAggregationResult_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name    string
 		rawJSON []byte
-		want    PercentileAggregationResult
+		want    PercentilesAggregationResult
 		wantErr bool
 	}{
 		{
 			name:    "Basic result",
-			rawJSON: []byte(`{"1.0":1,"5.0":1,"25.0":1,"50.0":1,"75.0":1,"95.0":1,"99.0":1}`),
-			want: PercentileAggregationResult{
+			rawJSON: []byte(`{"values":{"1.0":1,"5.0":1,"25.0":1,"50.0":1,"75.0":1,"95.0":1,"99.0":1}}`),
+			want: PercentilesAggregationResult{
 				P1:  &testValue,
 				P5:  &testValue,
 				P25: &testValue,
@@ -67,8 +67,8 @@ func TestPercentileAggregationResult_UnmarshalJSON(t *testing.T) {
 		},
 		{
 			name:    "Value and value string",
-			rawJSON: []byte(`{"1.0":1,"1.0_as_string":"1","5.0":1,"5.0_as_string":"1","25.0":1,"25.0_as_string":"1","50.0":1,"50.0_as_string":"1","75.0":1,"75.0_as_string":"1","95.0":1,"95.0_as_string":"1","99.0":1,"99.0_as_string":"1"}`),
-			want: PercentileAggregationResult{
+			rawJSON: []byte(`{"values":{"1.0":1,"1.0_as_string":"1","5.0":1,"5.0_as_string":"1","25.0":1,"25.0_as_string":"1","50.0":1,"50.0_as_string":"1","75.0":1,"75.0_as_string":"1","95.0":1,"95.0_as_string":"1","99.0":1,"99.0_as_string":"1"}}`),
+			want: PercentilesAggregationResult{
 				P1:        &testValue,
 				P1String:  "1",
 				P5:        &testValue,
@@ -87,14 +87,14 @@ func TestPercentileAggregationResult_UnmarshalJSON(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "No results",
-			rawJSON: []byte(`{"1.0":null,"5.0":null,"25.0":null,"50.0":null,"75.0":null,"95.0":null,"99.0":null}`),
-			want:    PercentileAggregationResult{},
+			name:    "No values",
+			rawJSON: []byte(`{"values":{"1.0":null,"5.0":null,"25.0":null,"50.0":null,"75.0":null,"95.0":null,"99.0":null}}`),
+			want:    PercentilesAggregationResult{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var got PercentileAggregationResult
+			var got PercentilesAggregationResult
 			gotErr := json.Unmarshal(tt.rawJSON, &got)
 
 			if (gotErr != nil) != tt.wantErr {
