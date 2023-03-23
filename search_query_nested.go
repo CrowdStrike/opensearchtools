@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// NestedQuery is a type of joining query that allows searched in fields that are of the `nested` type.
+// NestedQuery is a type of joining query that allows searches in fields that are of the `nested` type.
 // An empty NestedQuery will be rejected by OpenSearch for two reasons:
 //
 //   - a path must not be nil or empty
