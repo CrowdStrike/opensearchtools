@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/opensearch-project/opensearch-go/v2"
 	"github.com/opensearch-project/opensearch-go/v2/opensearchapi"
@@ -12,56 +13,70 @@ import (
 )
 
 type IndexRequest struct {
-	Action opensearchtools.IndexAction
-
-	Indices []string
-
-	Refresh opensearchtools.Refresh
-
-	Routing string
+	Operation opensearchtools.IndexOperation
+	Routing   string
 }
 
 // NewIndexRequest instantiates an empty IndexRequest
-func NewIndexRequest() *BulkRequest {
-	return &BulkRequest{}
+func NewIndexRequest() *IndexRequest {
+	return &IndexRequest{}
 }
 
-// Add an index action to the IndexRequest.
-func (r *IndexRequest) Add(action opensearchtools.IndexAction) *IndexRequest {
-	r.Action = action
-	return r
+// Add an index operation to the IndexRequest.
+func (i *IndexRequest) Add(operation opensearchtools.IndexOperation) *IndexRequest {
+	i.Operation = operation
+	return i
 }
 
-// WithIndices on the request
-func (r *IndexRequest) WithIndices(index ...string) *IndexRequest {
-	r.Indices = index
-	return r
+func (i *IndexRequest) WithRouting(routing string) *IndexRequest {
+	i.Routing = routing
+	return i
 }
 
-func (r *IndexRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.OpenSearchResponse[IndexResponse], error) {
-	rawBody, jErr := r.ToOpenSearchJSON()
+// Validate the index request based on the types
+func (i *IndexRequest) Validate() error {
+	switch i.Operation.OperationType() {
+	case opensearchtools.IndexCreate:
+		if len(i.Operation.GetIndices()) > 1 {
+			return fmt.Errorf("the index length for create should be 1, current lenght: %d", len(i.Operation.GetIndices()))
+		}
+	case opensearchtools.IndexGet:
+		// implement some checks
+	case opensearchtools.IndexExists:
+		// implement some checks
+	case opensearchtools.IndexDelete:
+		// implement some checks
+	}
+	return nil
+}
+
+func (i *IndexRequest) Do(ctx context.Context, client *opensearch.Client) (*opensearchtools.OpenSearchResponse[IndexResponse], error) {
+	if err := i.Validate(); err != nil {
+		return nil, err
+	}
+	rawBody, jErr := i.ToOpenSearchJSON()
 	if jErr != nil {
 		return nil, jErr
 	}
 	var osResp *opensearchapi.Response
 	var rErr error
-	switch r.Action.Type {
+	switch i.Operation.OperationType() {
 	case opensearchtools.IndexCreate:
 		osResp, rErr = opensearchapi.IndicesCreateRequest{
-			Index: r.Indices[0], // check it please
+			Index: i.Operation.GetIndices()[0], // todo: check it please
 			Body:  bytes.NewReader(rawBody),
 		}.Do(ctx, client)
 	case opensearchtools.IndexDelete:
 		osResp, rErr = opensearchapi.IndicesDeleteRequest{
-			Index: r.Indices,
+			Index: i.Operation.Indices,
 		}.Do(ctx, client)
 	case opensearchtools.IndexExists:
 		osResp, rErr = opensearchapi.IndicesExistsRequest{
-			Index: r.Indices,
+			Index: i.Operation.GetIndices(),
 		}.Do(ctx, client)
 	case opensearchtools.IndexGet:
 		osResp, rErr = opensearchapi.IndicesGetRequest{
-			Index: r.Indices,
+			Index: i.Operation.GetIndices(),
 		}.Do(ctx, client)
 	}
 
@@ -74,12 +89,10 @@ func (r *IndexRequest) Do(ctx context.Context, client *opensearch.Client) (*open
 		return nil, err
 	}
 
-	resp := IndexResponse{}
-
-	if err := json.Unmarshal(respBuf.Bytes(), &resp); err != nil {
+	resp, err := i.parseResponse(respBuf.Bytes(), i.Operation.OperationType())
+	if err != nil {
 		return nil, err
 	}
-
 	return &opensearchtools.OpenSearchResponse[IndexResponse]{
 		StatusCode: osResp.StatusCode,
 		Header:     osResp.Header,
@@ -87,26 +100,49 @@ func (r *IndexRequest) Do(ctx context.Context, client *opensearch.Client) (*open
 	}, nil
 }
 
-func (r *IndexRequest) ToOpenSearchJSON() ([]byte, error) {
+func (i *IndexRequest) ToOpenSearchJSON() ([]byte, error) {
 	bodyBuf := new(bytes.Buffer)
-	// parsing
+	// parsing get the doc for index create etc
 	return bodyBuf.Bytes(), nil
+}
+
+func (i *IndexRequest) parseResponse(resp []byte, operation opensearchtools.IndexOp) (IndexResponse, error) {
+	indexResponse := IndexResponse{}
+	if err := json.Unmarshal(resp, &indexResponse); err != nil {
+		return IndexResponse{}, err
+	}
+	if operation == opensearchtools.IndexGet {
+		if indexResponse.Error == nil {
+			var indexInfo IndexGetResponse
+			if err := json.Unmarshal(resp, &indexInfo); err != nil {
+				return IndexResponse{}, err
+			}
+			return IndexResponse{IndexGetResponse: &indexInfo}, nil
+		}
+		return indexResponse, nil
+	}
+
+	return indexResponse, nil
 }
 
 type IndexResponse struct {
 	Acknowledged *bool
 	Error        *Error
-	*Indices
+	*IndexGetResponse
 }
 
-type Indices map[string]IndexInfo
+type IndexGetResponse map[string]IndexInfo
 
 type IndexInfo struct {
-	aliases  map[string]json.RawMessage
-	mappings map[string]json.RawMessage
+	Aliases  map[string]json.RawMessage
+	Mappings map[string]json.RawMessage
 	Settings *IndexSettings
 }
+
 type IndexSettings struct {
+	Index IndexSettingsInfo
+}
+type IndexSettingsInfo struct {
 	CreationDate     string
 	NumberOfShards   string
 	NumberOfReplicas string

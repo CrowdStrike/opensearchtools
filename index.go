@@ -3,6 +3,7 @@ package opensearchtools
 import (
 	"context"
 	"encoding/json"
+	"time"
 )
 
 // Index defines a method which knows how to make an OpenSearch [Index] request.
@@ -14,74 +15,153 @@ type Index interface {
 }
 
 type IndexRequest struct {
-	Action IndexAction
-
-	Indices []string
-
-	Refresh Refresh
-
-	Routing string
+	Operation IndexOperation
+	Routing   string
 }
 
-type IndexAction struct {
-	Type IndexActionType
-	Doc  RoutableDoc
-}
-
-type IndexActionType string
+type IndexOp string
 
 const (
 	// IndexCreate creates an index and returns an error otherwise.
-	IndexCreate IndexActionType = "create"
+	IndexCreate IndexOp = "create"
 
 	// IndexDelete delete an index if it exists and returns an error otherwise.
-	IndexDelete IndexActionType = "delete"
+	IndexDelete IndexOp = "delete"
 
 	// IndexGet gets an index if it exists and returns an error otherwise.
-	IndexGet IndexActionType = "update"
+	IndexGet IndexOp = "get"
 
 	// IndexExists checks the existence of an index
-	IndexExists IndexActionType = "exists"
+	IndexExists IndexOp = "exists"
 )
 
-func NewCreateIndexAction(doc RoutableDoc) IndexAction {
-	return IndexAction{
-		Type: IndexCreate,
-		Doc:  doc,
-	}
+// IndexOperation various different index operations to be executed
+type IndexOperation struct {
+	Operation IndexOp
+	Indices   []string
+	Config    *indexRequestConfig
+	Doc       RoutableDoc
 }
-func NewDeleteIndexAction() IndexAction {
-	return IndexAction{
-		Type: IndexDelete,
+
+func NewIndexCreateOperation(index string, doc RoutableDoc, ops ...IndexReqOptionFunc) *IndexOperation {
+	config := &indexRequestConfig{}
+	for _, o := range ops {
+		o(config)
+	}
+	return &IndexOperation{Indices: []string{index}, Doc: doc, Config: config, Operation: IndexCreate}
+}
+
+func NewIndexDeleteOperation(index []string, ops ...IndexReqOptionFunc) *IndexOperation {
+	config := &indexRequestConfig{}
+	for _, o := range ops {
+		o(config)
+	}
+	return &IndexOperation{Indices: index, Config: config, Operation: IndexCreate}
+}
+
+func NewIndexGetOperation(index []string, ops ...IndexReqOptionFunc) *IndexOperation {
+	config := &indexRequestConfig{}
+	for _, o := range ops {
+		o(config)
+	}
+	return &IndexOperation{Indices: index, Config: config, Operation: IndexGet}
+}
+
+func NewIndexExistOperation(index []string, ops ...IndexReqOptionFunc) *IndexOperation {
+	config := &indexRequestConfig{}
+	for _, o := range ops {
+		o(config)
+	}
+	return &IndexOperation{Indices: index, Operation: IndexExists}
+}
+func (i *IndexOperation) OperationType() IndexOp {
+	return i.Operation
+}
+
+func (i *IndexOperation) GetIndices() []string {
+	return i.Indices
+}
+
+func (i *IndexOperation) GetDoc() RoutableDoc {
+	return i.Doc
+}
+
+type indexRequestConfig struct {
+	masterTimeout         time.Duration
+	clusterManagerTimeout time.Duration
+	expandWildcards       string // make this enum later
+	waitForActiveShards   string
+	allowNoIndices        bool
+}
+
+// IndexReqOptionFunc for functional options
+type IndexReqOptionFunc func(config *indexRequestConfig)
+
+// WithMasterTimeOut to add the master timeout
+func WithMasterTimeOut(d time.Duration) IndexReqOptionFunc {
+	return func(config *indexRequestConfig) {
+		config.masterTimeout = d
 	}
 }
 
-func NewGetIndexAction() IndexAction {
-	return IndexAction{
-		Type: IndexGet,
+// WithClusterManagerTimeout to add the cluster master timeout
+func WithClusterManagerTimeout(d time.Duration) IndexReqOptionFunc {
+	return func(config *indexRequestConfig) {
+		config.clusterManagerTimeout = d
 	}
 }
 
-func NewExistsIndexAction() IndexAction {
-	return IndexAction{
-		Type: IndexExists,
+// WithExpandWildcards to add the wildcard option
+func WithExpandWildcards(w string) IndexReqOptionFunc {
+	return func(config *indexRequestConfig) {
+		config.expandWildcards = w
 	}
 }
 
+// WithWaitForActiveShards to add the active shard option
+func WithWaitForActiveShards(s string) IndexReqOptionFunc {
+	return func(config *indexRequestConfig) {
+		config.waitForActiveShards = s
+	}
+}
+
+// WithAllowNoIndices to set allow no index option
+func WithAllowNoIndices(a bool) IndexReqOptionFunc {
+	return func(config *indexRequestConfig) {
+		config.allowNoIndices = a
+	}
+}
+
+// Validate validating things
+func (c *indexRequestConfig) Validate() error {
+	// implement some validation e.g. for active shard a positive value etc.
+	return nil
+}
+
+// IndexResponse - the combined response, may be create an interface and has each response its own sturct
 type IndexResponse struct {
+	// index create response
 	Acknowledged *bool
-	Error        *Error
-	*Indices
+	// general error response
+	Error *Error
+	// index get response
+	*IndexGetResponse
+	// index exits has only http status responses:200 – the index exists, and 404 – the index does not exist.
+	// index create has only http status responses: 201 – the index created, and 409 – the index already exists - 400 - bad index request
 }
 
-type Indices map[string]IndexInfo
+// IndexGetResponse the weired index get response with index name as keys
+type IndexGetResponse map[string]IndexInfo
 
 type IndexInfo struct {
-	aliases  map[string]json.RawMessage
-	mappings map[string]json.RawMessage
+	Aliases  map[string]json.RawMessage
+	Mappings map[string]json.RawMessage
 	Settings *IndexSettings
 }
 type IndexSettings struct {
+	Index IndexSettingsInfo
+}
+type IndexSettingsInfo struct {
 	CreationDate     string
 	NumberOfShards   string
 	NumberOfReplicas string
