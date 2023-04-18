@@ -18,16 +18,16 @@ type CreateIndexRequest struct {
 	DocBody             io.Reader
 	MasterTimeout       time.Duration
 	Timeout             time.Duration
-	WaitForActiveShards string // todo: update this with enum or not since we have numbers and all
-	Routing             string
+	WaitForActiveShards string
 }
 
 // NewCreateIndexRequest instantiates an CreateIndexRequest with default values
 func NewCreateIndexRequest() *CreateIndexRequest {
 	return &CreateIndexRequest{
-		MasterTimeout:       30 * time.Second,
+		MasterTimeout:       30 * time.Second, // todo: discus it may be we want to have pointer and hence nils for defaults
 		Timeout:             30 * time.Second,
-		WaitForActiveShards: "1"}
+		WaitForActiveShards: "1",
+	}
 }
 
 // WithIndex adds the index for CreateIndexRequest
@@ -39,12 +39,6 @@ func (c *CreateIndexRequest) WithIndex(index string) *CreateIndexRequest {
 // WithDocBody adds the body for CreateIndexRequest that contains detailed index setting
 func (c *CreateIndexRequest) WithDocBody(body io.Reader) *CreateIndexRequest {
 	c.DocBody = body
-	return c
-}
-
-// WithRouting adds the routing for CreateIndexRequest
-func (c *CreateIndexRequest) WithRouting(r string) *CreateIndexRequest {
-	c.Routing = r
 	return c
 }
 

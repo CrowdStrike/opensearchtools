@@ -100,3 +100,57 @@ func (e *Executor) Bulk(ctx context.Context, req *opensearchtools.BulkRequest) (
 
 	return resp, nil
 }
+
+// CreateIndex executes the CreateIndexRequest using the provided [opensearchtools.CreateIndexRequest].
+// If the request is executed successfully, then an
+// [opensearchtools.OpenSearchResponse] containing a [opensearchtools.CreateIndexResponse]
+// An error can be returned if:
+//   - The request to OpenSearch fails
+//   - The results json cannot be unmarshalled
+func (e *Executor) CreateIndex(ctx context.Context, req *opensearchtools.CreateIndexRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.CreateIndexResponse], err error) {
+	osv2Req, vrs := FromDomainCreateIndexRequest(req)
+	resp.ValidationResults.Extend(vrs)
+
+	if vrs.IsFatal() {
+		return resp, opensearchtools.NewValidationError(vrs)
+	}
+
+	osv2Resp, reqErr := osv2Req.Do(ctx, e.Client)
+	if reqErr != nil {
+		return resp, reqErr
+	}
+
+	resp.ValidationResults.Extend(osv2Resp.ValidationResults)
+	resp.Response = osv2Resp.Response.toDomain()
+	resp.StatusCode = osv2Resp.StatusCode
+	resp.Header = osv2Resp.Header
+
+	return resp, nil
+}
+
+// DeleteIndex executes the DeleteIndexRequest using the provided [opensearchtools.DeleteIndexRequest].
+// If the request is executed successfully, then an
+// [opensearchtools.OpenSearchResponse] containing a [opensearchtools.DeleteIndexResponse]
+// An error can be returned if:
+//   - The request to OpenSearch fails
+//   - The results json cannot be unmarshalled
+func (e *Executor) DeleteIndex(ctx context.Context, req *opensearchtools.DeleteIndexRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.DeleteIndexResponse], err error) {
+	osv2Req, vrs := FromDomainDeleteIndexRequest(req)
+	resp.ValidationResults.Extend(vrs)
+
+	if vrs.IsFatal() {
+		return resp, opensearchtools.NewValidationError(vrs)
+	}
+
+	osv2Resp, reqErr := osv2Req.Do(ctx, e.Client)
+	if reqErr != nil {
+		return resp, reqErr
+	}
+
+	resp.ValidationResults.Extend(osv2Resp.ValidationResults)
+	resp.Response = osv2Resp.Response.toDomain()
+	resp.StatusCode = osv2Resp.StatusCode
+	resp.Header = osv2Resp.Header
+
+	return resp, nil
+}

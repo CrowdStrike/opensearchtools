@@ -18,7 +18,6 @@ type DeleteIndexRequest struct {
 	ExpandWildcards   string
 	IgnoreUnavailable bool
 	AllowNoIndices    bool
-	Routing           string
 }
 
 // NewDeleteIndexRequest instantiates a DeleteIndexRequest with default values
@@ -34,12 +33,6 @@ func NewDeleteIndexRequest() *DeleteIndexRequest {
 // WithIndices adds indices to be deleted for DeleteIndexRequest
 func (d *DeleteIndexRequest) WithIndices(indices []string) *DeleteIndexRequest {
 	d.Indices = indices
-	return d
-}
-
-// WithRouting adds the routing for DeleteIndexRequest
-func (d *DeleteIndexRequest) WithRouting(r string) *DeleteIndexRequest {
-	d.Routing = r
 	return d
 }
 
@@ -75,4 +68,10 @@ func (d *DeleteIndexRequest) WithIgnoreUnavailable(i bool) *DeleteIndexRequest {
 func (d *DeleteIndexRequest) WithAllowNoIndices(a bool) *DeleteIndexRequest {
 	d.AllowNoIndices = a
 	return d
+}
+
+// DeleteIndexResponse represent the response for DeleteIndexResponse, either error or acknowledged
+type DeleteIndexResponse struct {
+	Acknowledged *bool
+	Error        *Error
 }
