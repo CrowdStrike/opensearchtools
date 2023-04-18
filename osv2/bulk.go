@@ -26,6 +26,9 @@ type BulkRequest struct {
 
 	// Index determines the entire index for the request
 	Index string
+
+	// ParseResponseItemsOnlyOnFailure determines if the bulk response is parsed all the time or only when errors present in the response
+	ParseResponseItemsOnlyOnFailure bool
 }
 
 // FromDomainBulkRequest creates a new [BulkRequest] from the given [opensearchtools.BulkRequest/.
@@ -35,9 +38,10 @@ func FromDomainBulkRequest(req *opensearchtools.BulkRequest) (BulkRequest, opens
 	var vrs opensearchtools.ValidationResults
 
 	return BulkRequest{
-		Actions: req.Actions,
-		Refresh: req.Refresh,
-		Index:   req.Index,
+		Actions:                         req.Actions,
+		Refresh:                         req.Refresh,
+		Index:                           req.Index,
+		ParseResponseItemsOnlyOnFailure: req.ParseResponseItemsOnlyOnFailure,
 	}, vrs
 }
 
@@ -141,9 +145,8 @@ func (r *BulkRequest) Do(ctx context.Context, client *opensearch.Client) (*opens
 		return nil, err
 	}
 
-	resp := BulkResponse{}
-
-	if err := json.Unmarshal(respBuf.Bytes(), &resp); err != nil {
+	resp, err := r.parseResponse(respBuf.Bytes())
+	if err != nil {
 		return nil, err
 	}
 
@@ -153,6 +156,31 @@ func (r *BulkRequest) Do(ctx context.Context, client *opensearch.Client) (*opens
 		Response:          resp,
 		ValidationResults: vrs,
 	}, nil
+}
+
+// parseResponse parses the response based on the bulk response settings
+func (r *BulkRequest) parseResponse(respBuf []byte) (BulkResponse, error) {
+	resp := BulkResponse{}
+	if r.ParseResponseItemsOnlyOnFailure {
+		// first parse only the duration (took) and error indicator (errors)
+		var tmpResponse struct {
+			Took   int64 `json:"took"`
+			Errors bool  `json:"errors"`
+		}
+		if err := json.Unmarshal(respBuf, &tmpResponse); err != nil {
+			return BulkResponse{}, err
+		}
+		// if there were no errors, return a response with only the duration and no response documents.
+		// otherwise, fall through and unmarshal the entire response below
+		if !tmpResponse.Errors {
+			resp.Took = tmpResponse.Took
+			return resp, nil
+		}
+	}
+	if err := json.Unmarshal(respBuf, &resp); err != nil {
+		return BulkResponse{}, err
+	}
+	return resp, nil
 }
 
 // BulkResponse wraps the functionality of [opensearchapi.Response] by unmarshalling the api response into

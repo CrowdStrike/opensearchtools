@@ -1,6 +1,7 @@
 package osv2
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -138,4 +139,81 @@ func TestBulkResponse_ToDomain1(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestParseBulkResponse(t *testing.T) {
+	tests := []struct {
+		name          string
+		jsonBytes     []byte
+		errorResponse bool
+		want          BulkResponse
+	}{
+		{
+			name:          "Response with get only errors and has errors",
+			jsonBytes:     []byte(`{ "took": 11, "errors": true, "items": [ { "index": { "_index": "index", "_type": "_doc", "_id": "doc_1", "_version": 1, "result": "created", "_seq_no": 1, "_primary_term": 1, "status": 201 }}]}`), //nolint:lll,
+			errorResponse: true,
+			want: BulkResponse{Took: 11, Errors: true, Items: []opensearchtools.ActionResponse{{
+				Type:        "index",
+				Index:       "index",
+				ID:          "doc_1",
+				Version:     1,
+				Result:      "created",
+				SeqNo:       1,
+				PrimaryTerm: 1,
+				Status:      201,
+			}}},
+		},
+		{
+			name:          "Response with get only errors and has no errors",
+			jsonBytes:     []byte(`{ "took": 11, "errors": false, "items": [ { "index": { "_index": "index", "_type": "_doc", "_id": "doc_1", "_version": 1, "result": "created", "_seq_no": 1, "_primary_term": 1, "status": 201 }}]}`), //nolint:lll,
+			errorResponse: true,
+			want:          BulkResponse{Took: 11, Errors: false, Items: nil},
+		},
+		{
+			name:          "Complete response and has errors",
+			jsonBytes:     []byte(`{ "took": 11, "errors": true, "items": [ { "index": { "_index": "index", "_type": "_doc", "_id": "doc_1", "_version": 1, "result": "created", "_seq_no": 1, "_primary_term": 1, "status": 201 }}]}`), //nolint:lll,
+			errorResponse: false,
+			want: BulkResponse{Took: 11, Errors: true, Items: []opensearchtools.ActionResponse{{
+				Type:        "index",
+				Index:       "index",
+				ID:          "doc_1",
+				Version:     1,
+				Result:      "created",
+				SeqNo:       1,
+				PrimaryTerm: 1,
+				Status:      201,
+			}}},
+		},
+		{
+			name:          "Complete response and has errors",
+			jsonBytes:     []byte(`{ "took": 11, "errors": false, "items": [ { "index": { "_index": "index", "_type": "_doc", "_id": "doc_1", "_version": 1, "result": "created", "_seq_no": 1, "_primary_term": 1, "status": 201 }}]}`), //nolint:lll,
+			errorResponse: false,
+			want: BulkResponse{Took: 11, Errors: false, Items: []opensearchtools.ActionResponse{{
+				Type:        "index",
+				Index:       "index",
+				ID:          "doc_1",
+				Version:     1,
+				Result:      "created",
+				SeqNo:       1,
+				PrimaryTerm: 1,
+				Status:      201,
+			}}},
+		},
+	}
+
+	req := NewBulkRequest()
+
+	for _, tt := range tests {
+		req.ParseResponseItemsOnlyOnFailure = tt.errorResponse
+		var respBuf bytes.Buffer
+		if _, err := respBuf.ReadFrom(bytes.NewReader(tt.jsonBytes)); err != nil {
+			t.Errorf("unabel to parse the response string %v", err)
+		}
+		got, err := req.parseResponse(respBuf.Bytes())
+		if err != nil {
+			t.Errorf("unable to parse the response %v", err)
+		}
+		require.Equal(t, tt.want, got)
+	}
+
 }

@@ -27,6 +27,9 @@ type BulkRequest struct {
 
 	// Index determines the entire index for the request
 	Index string
+
+	// ParseResponseItemsOnlyOnFailure determines if the bulk response is parsed all the time or only when errors present in the response
+	ParseResponseItemsOnlyOnFailure bool
 }
 
 // NewBulkRequest instantiates an empty BulkRequest
