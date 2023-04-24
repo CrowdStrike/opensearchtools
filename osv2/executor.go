@@ -154,3 +154,30 @@ func (e *Executor) DeleteIndex(ctx context.Context, req *opensearchtools.DeleteI
 
 	return resp, nil
 }
+
+// CheckExistsIndex executes the CheckIndexExistsRequest using the provided [opensearchtools.CheckIndexExistsRequest].
+// If the request is executed successfully, then an
+// [opensearchtools.OpenSearchResponse] containing a [opensearchtools.CheckIndexExistsResponse]
+// An error can be returned if:
+//   - The request to OpenSearch fails
+//   - The results json cannot be unmarshalled
+func (e *Executor) CheckExistsIndex(ctx context.Context, req *opensearchtools.CheckIndexExistsRequest) (resp opensearchtools.OpenSearchResponse[opensearchtools.CheckIndexExistsResponse], err error) {
+	osv2Req, vrs := FromDomainCheckIndexExitsRequest(req)
+	resp.ValidationResults.Extend(vrs)
+
+	if vrs.IsFatal() {
+		return resp, opensearchtools.NewValidationError(vrs)
+	}
+
+	osv2Resp, reqErr := osv2Req.Do(ctx, e.Client)
+	if reqErr != nil {
+		return resp, reqErr
+	}
+
+	resp.ValidationResults.Extend(osv2Resp.ValidationResults)
+	resp.Response = osv2Resp.Response.toDomain()
+	resp.StatusCode = osv2Resp.StatusCode
+	resp.Header = osv2Resp.Header
+
+	return resp, nil
+}

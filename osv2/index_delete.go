@@ -18,7 +18,8 @@ import (
 //   - OpenSearch 2
 //
 // An empty DeleteIndexRequest will fail to execute. At least one index is required to be deleted
-//  [DeleteIndex] https://opensearch.org/docs/latest/api-reference/index-apis/delete-index/
+//
+//	[DeleteIndex] https://opensearch.org/docs/latest/api-reference/index-apis/delete-index/
 type DeleteIndexRequest struct {
 	Indices           []string
 	MasterTimeout     time.Duration
@@ -28,7 +29,7 @@ type DeleteIndexRequest struct {
 	AllowNoIndices    bool
 }
 
-// FromDomainDeleteIndexRequest creates a new [BulkRequest] from the given [opensearchtools.DeleteIndexRequest]
+// FromDomainDeleteIndexRequest creates a new [DeleteIndexRequest] from the given [opensearchtools.DeleteIndexRequest]
 func FromDomainDeleteIndexRequest(req *opensearchtools.DeleteIndexRequest) (DeleteIndexRequest, opensearchtools.ValidationResults) {
 	// As more versions are implemented, these [opensearchtools.ValidationResults] may be used to contain issues
 	// converting from the domain model to the V2 model.
@@ -44,7 +45,7 @@ func FromDomainDeleteIndexRequest(req *opensearchtools.DeleteIndexRequest) (Dele
 	}, vrs
 }
 
-// Validate validates the given CreateIndexRequest
+// Validate validates the given DeleteIndexRequest
 func (d *DeleteIndexRequest) Validate() opensearchtools.ValidationResults {
 	var validationResults opensearchtools.ValidationResults
 
@@ -65,40 +66,40 @@ func NewDeleteIndexRequest() *DeleteIndexRequest {
 	}
 }
 
-// WithIndices adds indices to be deleted for DeleteIndexRequest
+// WithIndices sets indices to be deleted for DeleteIndexRequest
 func (d *DeleteIndexRequest) WithIndices(indices []string) *DeleteIndexRequest {
 	d.Indices = indices
 	return d
 }
 
-// WithMasterTimeout adds the master_timeout for DeleteIndexRequest
+// WithMasterTimeout sets the master_timeout for DeleteIndexRequest
 // it defines how long to wait for a connection to the master node. Default is 30s.
 func (d *DeleteIndexRequest) WithMasterTimeout(duration time.Duration) *DeleteIndexRequest {
 	d.MasterTimeout = duration
 	return d
 }
 
-// WithTimeout adds the timeout for DeleteIndexRequest, it defines how long to wait for the request to return. Default is 30s
+// WithTimeout sets the timeout for DeleteIndexRequest, it defines how long to wait for the request to return. Default is 30s
 func (d *DeleteIndexRequest) WithTimeout(duration time.Duration) *DeleteIndexRequest {
 	d.Timeout = duration
 	return d
 }
 
-// WithExpandWildCard adds expand_wildcards option for DeleteIndexRequest,
+// WithExpandWildCard sets expand_wildcards option for DeleteIndexRequest,
 // it expands wildcard expressions to different indices, default is open
 func (d *DeleteIndexRequest) WithExpandWildCard(w string) *DeleteIndexRequest {
 	d.ExpandWildcards = w
 	return d
 }
 
-// WithIgnoreUnavailable add ignore_unavailable options for DeleteIndexRequest,
+// WithIgnoreUnavailable sets ignore_unavailable options for DeleteIndexRequest,
 // If true, OpenSearch does not include missing or closed indices in the response. Default is false
 func (d *DeleteIndexRequest) WithIgnoreUnavailable(i bool) *DeleteIndexRequest {
 	d.IgnoreUnavailable = i
 	return d
 }
 
-// WithAllowNoIndices defines allow_no_indices for DeleteIndexRequest,
+// WithAllowNoIndices sets allow_no_indices for DeleteIndexRequest,
 // it defines Whether to ignore wildcards that don’t match any indices. Default is true
 func (d *DeleteIndexRequest) WithAllowNoIndices(a bool) *DeleteIndexRequest {
 	d.AllowNoIndices = a
@@ -152,7 +153,7 @@ func (d *DeleteIndexRequest) Do(ctx context.Context, client *opensearch.Client) 
 
 // DeleteIndexResponse represent the response for DeleteIndexResponse, either error or acknowledged
 type DeleteIndexResponse struct {
-	Acknowledged *bool
+	Acknowledged bool
 	Error        *Error
 }
 

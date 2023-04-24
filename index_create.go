@@ -30,42 +30,40 @@ func NewCreateIndexRequest() *CreateIndexRequest {
 	}
 }
 
-// WithIndex adds the index for CreateIndexRequest
+// WithIndex sets the index for CreateIndexRequest
 func (c *CreateIndexRequest) WithIndex(index string) *CreateIndexRequest {
 	c.Index = index
 	return c
 }
 
-// WithDocBody adds the body for CreateIndexRequest that contains detailed index setting
+// WithDocBody sets the body for CreateIndexRequest that contains detailed index setting
 func (c *CreateIndexRequest) WithDocBody(body io.Reader) *CreateIndexRequest {
 	c.DocBody = body
 	return c
 }
 
-// WithMasterTimeout adds the master timeout for CreateIndexRequest
+// WithMasterTimeout sets the master timeout for CreateIndexRequest
 // it defines how long to wait for a connection to the master node. Default is 30s.
 func (c *CreateIndexRequest) WithMasterTimeout(d time.Duration) *CreateIndexRequest {
 	c.MasterTimeout = d
 	return c
 }
 
-// WithTimeout adds the timeout for CreateIndexRequest, it defines how long to wait for the request to return. Default is 30s
+// WithTimeout sets the timeout for CreateIndexRequest, it defines how long to wait for the request to return. Default is 30s
 func (c *CreateIndexRequest) WithTimeout(d time.Duration) *CreateIndexRequest {
 	c.Timeout = d
 	return c
 }
 
-// WithWaitForActiveShards to add the active shard options with CreateIndexRequest,
+// WithWaitForActiveShards sets active shard options with CreateIndexRequest,
 // it specifies the number of active shards that must be available before OpenSearch processes the request. Default is 1
 func (c *CreateIndexRequest) WithWaitForActiveShards(s string) *CreateIndexRequest {
 	c.WaitForActiveShards = s
 	return c
 }
 
-// todo: add validate over here
-
 // CreateIndexResponse represent the response for CreateIndexRequest, either error or acknowledged
 type CreateIndexResponse struct {
-	Acknowledged *bool
+	Acknowledged bool
 	Error        *Error
 }
