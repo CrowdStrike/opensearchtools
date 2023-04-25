@@ -28,8 +28,9 @@ func TestSearchRequest_ToOpenSearchJSON(t *testing.T) {
 				WithQuery(opensearchtools.NewTermQuery("field", "value")).
 				AddIndices("test_index").
 				AddSorts(opensearchtools.NewSort("field", true)).
-				WithSize(1),
-			want:    `{"query":{"term":{"field":"value"}},"sort":[{"field":{"order":"desc"}}],"size":1}`,
+				WithSize(1).
+				WithFrom(1),
+			want:    `{"query":{"term":{"field":"value"}},"sort":[{"field":{"order":"desc"}}],"size":1,"from":1}`,
 			wantErr: false,
 		},
 		{
@@ -65,6 +66,20 @@ func TestSearchRequest_ToOpenSearchJSON(t *testing.T) {
 			search: NewSearchRequest().
 				WithSize(1),
 			want:    `{"size":1}`,
+			wantErr: false,
+		},
+		{
+			name: "Set From",
+			search: NewSearchRequest().
+				WithFrom(1),
+			want:    `{"from":1}`,
+			wantErr: false,
+		},
+		{
+			name: "Negative From is ignored",
+			search: NewSearchRequest().
+				WithFrom(-5),
+			want:    `{}`,
 			wantErr: false,
 		},
 		{

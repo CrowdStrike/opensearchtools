@@ -31,6 +31,9 @@ type SearchRequest struct {
 	// Size of results to be returned
 	Size int
 
+	// From the starting index to search from
+	From int
+
 	// Sort(s) to order the results returned
 	Sort []opensearchtools.Sort
 
@@ -61,14 +64,15 @@ func V2AggregateConverter(agg opensearchtools.Aggregation) (opensearchtools.Aggr
 	return agg, nil
 }
 
-// NewSearchRequest instantiates a SearchRequest with a Size of -1.
-// Any negative value for SearchRequest.Size will be ignored and not included in the source.
+// NewSearchRequest instantiates a SearchRequest with a From and Size of -1.
+// Any negative value for [SearchRequest.From] or [SearchRequest.Size] will be ignored and not included in the source.
 // Opensearch by default, if no size is included in a search request, will limit the results to 10 documents.
+// Opensearch by default, if no from is included in a search request, will return hits starting from the first hit based on the sort.
 // A NewSearchRequest will search across all indices and return the top 10 documents with the default [sorting].
 //
 // [sorting]: https://openopensearchtools.org/docs/latest/opensearch/search/sort/
 func NewSearchRequest() *SearchRequest {
-	return &SearchRequest{Size: -1}
+	return &SearchRequest{Size: -1, From: -1}
 }
 
 // ToOpenSearchJSON marshals the SearchRequest into the JSON shape expected by OpenSearch.
@@ -85,6 +89,10 @@ func (r *SearchRequest) ToOpenSearchJSON() ([]byte, error) {
 
 	if r.Size >= 0 {
 		source["size"] = r.Size
+	}
+
+	if r.From >= 0 {
+		source["from"] = r.From
 	}
 
 	if len(r.Sort) > 0 {
@@ -139,6 +147,13 @@ func (r *SearchRequest) AddIndices(indices ...string) *SearchRequest {
 // A negative value for size will be ignored and not included in the SearchRequest.Source.
 func (r *SearchRequest) WithSize(n int) *SearchRequest {
 	r.Size = n
+	return r
+}
+
+// WithFrom sets the request's starting index for the result hits.
+// A negative value for from will be ignored and not included in the SearchRequest.Source.
+func (r *SearchRequest) WithFrom(n int) *SearchRequest {
+	r.From = n
 	return r
 }
 
@@ -200,6 +215,7 @@ func FromDomainSearchRequest(req *opensearchtools.SearchRequest) (SearchRequest,
 
 	searchRequest.Index = req.Index
 	searchRequest.Size = req.Size
+	searchRequest.From = req.From
 	searchRequest.Sort = req.Sort
 	searchRequest.Query = query
 	searchRequest.Aggregations = aggs
