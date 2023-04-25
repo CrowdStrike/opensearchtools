@@ -171,8 +171,7 @@ type IndexSetting struct {
 
 // toDomain converts this instance of [GetIndexResponse] into an [opensearchtools.GetIndexResponse]
 func (g GetIndexResponse) toDomain() opensearchtools.GetIndexResponse {
-	var resp map[string]opensearchtools.IndexInfo
-
+	resp := make(map[string]opensearchtools.IndexInfo, len(g.Response))
 	for k, v := range g.Response {
 		settings := opensearchtools.IndexSetting{
 			RefreshInterval:  v.Settings.Index.RefreshInterval,
