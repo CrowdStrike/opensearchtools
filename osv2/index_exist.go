@@ -11,11 +11,7 @@ import (
 	"github.com/CrowdStrike/opensearchtools"
 )
 
-// CheckIndexExistsRequest is a domain model union type for all the fields of ExistIndexRequests for all
-// supported OpenSearch versions.
-// Currently supported versions are:
-//   - OpenSearch 2
-//
+// CheckIndexExistsRequest is a version-specific model for OSv2 of ExistIndexRequests for OpenSearch 2
 // An empty CheckIndexExistsRequest will fail to execute. At least one index is required to check if it exists or not
 //
 //	[ExistIndex] https://opensearch.org/docs/latest/api-reference/index-apis/exists/
@@ -53,8 +49,8 @@ func (e *CheckIndexExistsRequest) Validate() opensearchtools.ValidationResults {
 	return validationResults
 }
 
-// NewExistIndexRequest creates a CheckIndexExistsRequest with defaults
-func NewExistIndexRequest() *CheckIndexExistsRequest {
+// NewCheckIndexExistsRequest creates a CheckIndexExistsRequest with defaults
+func NewCheckIndexExistsRequest() *CheckIndexExistsRequest {
 	return &CheckIndexExistsRequest{
 		ExpandWildcards: "open",
 		AllowNoIndices:  true,

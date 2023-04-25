@@ -13,11 +13,7 @@ import (
 	"github.com/CrowdStrike/opensearchtools"
 )
 
-// CreateIndexRequest is a domain model union type for all the fields of CreateIndexRequests for all
-// supported OpenSearch versions.
-// Currently supported versions are:
-//   - OpenSearch 2
-//
+// CreateIndexRequest is a version-specific model for OSv2 of CreateIndexRequests for OpenSearch 2
 // An empty CreateIndexRequest will fail to execute. At least index is required to be added which matches to
 // the existing template index pattern. Otherwise, the DocBody has to be provided with the detailed index information
 // as provided in the documentation: [CreateIndex] https://opensearch.org/docs/latest/api-reference/index-apis/create-index/

@@ -12,11 +12,7 @@ import (
 	"github.com/CrowdStrike/opensearchtools"
 )
 
-// DeleteIndexRequest is a domain model union type for all the fields of DeleteIndexRequests for all
-// supported OpenSearch versions.
-// Currently supported versions are:
-//   - OpenSearch 2
-//
+// DeleteIndexRequest is a version-specific model for OSv2 of DeleteIndexRequests for OpenSearch 2
 // An empty DeleteIndexRequest will fail to execute. At least one index is required to be deleted
 //
 //	[DeleteIndex] https://opensearch.org/docs/latest/api-reference/index-apis/delete-index/
