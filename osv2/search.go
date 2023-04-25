@@ -65,7 +65,7 @@ func V2AggregateConverter(agg opensearchtools.Aggregation) (opensearchtools.Aggr
 }
 
 // NewSearchRequest instantiates a SearchRequest with a From and Size of -1.
-// Any negative value for SearchRequest.From or SearchRequest.Size will be ignored and not included in the source.
+// Any negative value for [SearchRequest.From] or [SearchRequest.Size] will be ignored and not included in the source.
 // Opensearch by default, if no size is included in a search request, will limit the results to 10 documents.
 // Opensearch by default, if no from is included in a search request, will return hits starting from the first hit based on the sort.
 // A NewSearchRequest will search across all indices and return the top 10 documents with the default [sorting].
